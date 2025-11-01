@@ -1,4 +1,4 @@
 .env
 
 # Docker files
-./persistence.local
+persistence.local/
