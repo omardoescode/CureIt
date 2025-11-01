@@ -1,21 +1,53 @@
 services:
-  api:
+  api_gateway:
     build: ./api_gateway/
-    container_name: api_gateway
+    container_name: api-gateway
     environment:
-      - NODE_ENV=${NODE_ENV}
-      - LOG_LEVEL=${LOG_LEVEL}
+      - NODE_ENV
+      - LOG_LEVEL
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
       - PORT=${API_GATEWAY_PORT}
     # depends_on:
     #   - content-processing
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+    networks:
+      - backend-net
 
   # content-processing:
-  # build: ./content-processing
-  # container_name: content-service
-  # environment:
-  #   - LOG_LEVEL=${LOG_LEVEL}
-  # ports:
-  #   - "${CONTENT_PROCESSING_PORT}:4001"
+  #   build: ./content-processing
+  #   depends_on:
+  #     - content_storage
+  #   container_name: content-service
+  #   environment:
+  #     - LOG_LEVEL=${LOG_LEVEL}
+  #   networks:
+  #     - backend-net
+
+  content_storage:
+    build: ./content_storage
+    container_name: content-storage
+    environment:
+      - NODE_ENV
+      - LOG_LEVEL
+      - PORT=${CONTENT_STORAGE_PORT}
+      - MONGO_URL="mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data"
+    depends_on:
+      - content-db
+    networks:
+      - backend-net
+
+  content-db:
+    image: mongo:8
+    container_name: content-storage-db
+    volumes:
+      - ./persistence.local/content-db:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${CONTENT_DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${CONTENT_DB_PASSWORD}
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge
