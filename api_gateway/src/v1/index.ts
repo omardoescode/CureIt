@@ -6,7 +6,7 @@ import logger from "@/lib/logger";
 const v1app = new Hono();
 
 v1app.post("/content/submit", async (c) => {
-  const body = await c.req.text();
+  const body = await c.req.json();
 
   const headers = new Headers(c.req.raw.headers);
   headers.set("CureIt-User-Id", "some_random_uuid");
@@ -22,7 +22,10 @@ v1app.post("/content/submit", async (c) => {
       {
         method: "POST",
         headers,
-        body,
+        body: {
+          ...body,
+          submitted_at: new Date().toISOString(),
+        },
       },
     );
 
