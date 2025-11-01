@@ -1,0 +1,20 @@
+services:
+  api:
+    build: ./api_gateway/
+    container_name: api_gateway
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - CONTENT_PROCESSING_SERVICE_URL=${CONTENT_PROCESSING_SERVICE_URL}
+    # depends_on:
+    #   - content-service
+    ports:
+      - "${API_PORT}:3000"
+
+  # content-service:
+  # build: ./content-service
+  # container_name: content-service
+  # environment:
+  #   - LOG_LEVEL=${LOG_LEVEL}
+  # ports:
+  #   - "${CONTENT_PORT}:4001"
