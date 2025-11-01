@@ -7,22 +7,25 @@ services:
       - LOG_LEVEL
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
       - PORT=${API_GATEWAY_PORT}
-    # depends_on:
-    #   - content-processing
+    depends_on:
+       - content-processing
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
     networks:
       - backend-net
 
-  # content-processing:
-  #   build: ./content-processing
-  #   depends_on:
-  #     - content_storage
-  #   container_name: content-service
-  #   environment:
-  #     - LOG_LEVEL=${LOG_LEVEL}
-  #   networks:
-  #     - backend-net
+  content-processing:
+     build: ./content-processing
+     depends_on:
+       - content_storage
+     container_name: content-processing
+     environment:
+       - LOG_LEVEL=${LOG_LEVEL}
+       - PORT=${CONTENT_PROCESSING_PORT}
+     ports:
+       - "${CONTENT_PROCESSING_PORT}:${CONTENT_PROCESSING_PORT}"
+     networks:
+       - backend-net
 
   content_storage:
     build: ./content_storage
@@ -31,11 +34,13 @@ services:
       - NODE_ENV
       - LOG_LEVEL
       - PORT=${CONTENT_STORAGE_PORT}
-      - MONGO_URL="mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data"
+      - MONGO_URL=mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data?authSource=admin
     depends_on:
       - content-storage-db
     networks:
       - backend-net
+    ports:
+      - "${CONTENT_STORAGE_PORT}:${CONTENT_STORAGE_PORT}"
 
   content-storage-db:
     image: mongo:8
@@ -46,7 +51,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${CONTENT_DB_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${CONTENT_DB_PASSWORD}
     ports:
-      - "27017:27017"
+      - "${CONTENT_DB_PORT}:${CONTENT_DB_PORT}"
     networks:
       - backend-net
 
