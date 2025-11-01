@@ -33,15 +33,15 @@ services:
       - PORT=${CONTENT_STORAGE_PORT}
       - MONGO_URL="mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data"
     depends_on:
-      - content-db
+      - content-storage-db
     networks:
       - backend-net
 
-  content-db:
+  content-storage-db:
     image: mongo:8
     container_name: content-storage-db
     volumes:
-      - ./persistence.local/content-db:/data/db
+      - ./persistence.local/content-storage-db:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${CONTENT_DB_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${CONTENT_DB_PASSWORD}
