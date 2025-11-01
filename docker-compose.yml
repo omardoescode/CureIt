@@ -5,16 +5,17 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV}
       - LOG_LEVEL=${LOG_LEVEL}
-      - CONTENT_PROCESSING_SERVICE_URL=${CONTENT_PROCESSING_SERVICE_URL}
+      - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
+      - PORT=${API_GATEWAY_PORT}
     # depends_on:
-    #   - content-service
+    #   - content-processing
     ports:
-      - "${API_PORT}:3000"
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
 
-  # content-service:
-  # build: ./content-service
+  # content-processing:
+  # build: ./content-processing
   # container_name: content-service
   # environment:
   #   - LOG_LEVEL=${LOG_LEVEL}
   # ports:
-  #   - "${CONTENT_PORT}:4001"
+  #   - "${CONTENT_PROCESSING_PORT}:4001"
