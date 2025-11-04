@@ -1,6 +1,6 @@
 import mongoose, { Document } from "mongoose";
 
-interface IContentItem extends Document<string> {
+export interface IContentItem extends Document<string> {
   slug: string;
   source_url: string;
   title: string;
@@ -12,7 +12,7 @@ interface IContentItem extends Document<string> {
   is_private: boolean;
 }
 
-const ContentItemSchema = new mongoose.Schema<IContentItem>(
+export const ContentItemSchema = new mongoose.Schema<IContentItem>(
   {
     slug: {
       type: String,
@@ -22,7 +22,12 @@ const ContentItemSchema = new mongoose.Schema<IContentItem>(
       trim: true,
       lowercase: true,
     },
-    source_url: { type: String, required: true, match: /^https?:\/\/.+/ },
+    source_url: {
+      type: String,
+      required: true,
+      match: /^https?:\/\/.+/,
+      index: true,
+    },
     title: { type: String, required: true, trim: true },
     author: { type: String, required: true, trim: true },
     markdown: { type: String, required: true },
