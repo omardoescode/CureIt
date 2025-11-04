@@ -1,8 +1,14 @@
 import zValidator from "@/utils/zValidator";
 import { Hono } from "hono";
-import { ContentSubmissionBodySchema } from "./validation/content";
-import { BaseHeadersSchema } from "./validation/headers";
-import { submitContent } from "./service/ContentItem";
+import {
+  ContentItemSlugSchema,
+  ContentSubmissionBodySchema,
+} from "./validation/content";
+import {
+  BaseHeadersSchema,
+  BaseProtectedHeadersSchema,
+} from "./validation/headers";
+import { submitContent, getContentItem } from "./service/ContentItem";
 import mongoose from "mongoose";
 import env from "@/utils/env";
 import logger from "@/lib/logger";
@@ -23,7 +29,7 @@ app.use(logMiddleware());
 
 app.post(
   "create_submission",
-  zValidator("header", BaseHeadersSchema),
+  zValidator("header", BaseProtectedHeadersSchema),
   zValidator("json", ContentSubmissionBodySchema),
   async (c) => {
     const headers = c.req.valid("header");
@@ -31,6 +37,19 @@ app.post(
 
     const content_slug = await submitContent(headers, body);
     return c.json({ content_slug }, 200);
+  },
+);
+
+app.get(
+  "content/:slug",
+  zValidator("header", BaseHeadersSchema),
+  zValidator("param", ContentItemSlugSchema),
+  async (c) => {
+    const headers = c.req.valid("header");
+    const { slug } = c.req.valid("param");
+
+    const content = await getContentItem(headers, slug);
+    return c.json(content, 200);
   },
 );
 
