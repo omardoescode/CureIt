@@ -13,3 +13,7 @@ export const ContentSubmissionBodySchema = z.object({
 });
 
 export type ContentSubmissionBody = z.infer<typeof ContentSubmissionBodySchema>;
+
+export const ContentItemSlugSchema = z.object({
+  slug: z.string().nonempty(),
+});
