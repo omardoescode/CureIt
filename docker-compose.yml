@@ -45,6 +45,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${CONTENT_DB_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${CONTENT_DB_PASSWORD}
+    ports:
+      - "27017:27017"
     networks:
       - backend-net
 
