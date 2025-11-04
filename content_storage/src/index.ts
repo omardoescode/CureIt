@@ -29,9 +29,8 @@ app.post(
     const headers = c.req.valid("header");
     const body = c.req.valid("json");
 
-    await submitContent(headers, body);
-    c.status(204);
-    return c.json(null);
+    const content_slug = await submitContent(headers, body);
+    return c.json({ content_slug }, 200);
   },
 );
 
