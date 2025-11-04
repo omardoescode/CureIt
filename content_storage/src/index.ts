@@ -3,8 +3,23 @@ import { Hono } from "hono";
 import { ContentSubmissionBodySchema } from "./validation/content";
 import { BaseHeadersSchema } from "./validation/headers";
 import { submitContent } from "./service/ContentItem";
+import mongoose from "mongoose";
+import env from "@/utils/env";
+import logger from "@/lib/logger";
+import { logger as logMiddleware } from "hono/logger";
+
+// Connect to database
+await mongoose
+  .connect(env.MONGO_URL)
+  .then(() => logger.info("Connected to mongoose successfully"))
+  .catch((err) => {
+    console.error("Failed to connect to the database");
+    throw err;
+  });
 
 const app = new Hono().basePath("/api");
+
+app.use(logMiddleware());
 
 app.post(
   "create_submission",
@@ -14,9 +29,13 @@ app.post(
     const headers = c.req.valid("header");
     const body = c.req.valid("json");
 
-    const item_id = await submitContent(headers, body);
-    return c.json(null, 204);
+    await submitContent(headers, body);
+    c.status(204);
+    return c.json(null);
   },
 );
 
-export default app;
+export default {
+  fetch: app.fetch,
+  port: env.PORT,
+};
