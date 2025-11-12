@@ -14,11 +14,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubmitContentRequest {
-    @JsonProperty("content_url")
-    private String contentUrl;
-    private List<String> topics;
-    @JsonProperty("is_private")
-    private boolean isPrivate;
-    @JsonProperty("submitted_at")
-    private LocalDateTime submittedAt = LocalDateTime.now();
+	@JsonProperty("content_url")
+	private String contentUrl;
+	private List<String> topics;
+	@JsonProperty("private")
+	private boolean isPrivate;
+	@JsonProperty("submitted_at")
+	private LocalDateTime submittedAt = LocalDateTime.now();
 }

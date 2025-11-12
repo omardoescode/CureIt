@@ -10,10 +10,10 @@ v1app.post("/content/submit", async (c) => {
 
   const headers = new Headers(c.req.raw.headers);
   headers.set("CureIt-User-Id", "some_random_uuid");
-  headers.set("CureIt-Correlation-Id", crypto.randomUUID());
+  headers.set("CureIt-Coordination-Id", crypto.randomUUID());
 
   logger.info("Forwarding /content/submit request", {
-    correlationId: headers.get("CureIt-Correlation-Id"),
+    correlationId: headers.get("CureIt-Coordination-Id"),
   });
 
   try {
@@ -22,10 +22,10 @@ v1app.post("/content/submit", async (c) => {
       {
         method: "POST",
         headers,
-        body: {
+        body: JSON.stringify({
           ...body,
           submitted_at: new Date().toISOString(),
-        },
+        }),
       },
     );
 
