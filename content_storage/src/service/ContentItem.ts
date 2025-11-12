@@ -2,6 +2,7 @@ import ContentItemSubmission from "@/models/ContentItemSubmission";
 import type { ContentSubmissionBody } from "../validation/content";
 import type { BaseHeaders, BaseProtectedHeaders } from "../validation/headers";
 import ContentItem, { type IContentItem } from "@/models/ContentItem";
+import logger from "@/lib/logger";
 
 export async function submitContent(
   headers: BaseProtectedHeaders,
@@ -41,7 +42,8 @@ export async function submitContent(
   });
 
   await submission.save();
-  return content._id;
+  logger.info(`Printing ${content.slug}`);
+  return content.slug;
 }
 
 export async function getContentItem(
