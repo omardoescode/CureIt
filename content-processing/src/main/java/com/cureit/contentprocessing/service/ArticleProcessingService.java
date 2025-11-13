@@ -22,18 +22,18 @@ public class ArticleProcessingService {
     private final ArticleExtractionService articleExtractionService;
     private final ContentStorageClient contentStorageClient;
 
-    public ContentSubmissionResponse processArticle(SubmitContentRequest request, String userId, String correlation) {
+    public ContentSubmissionResponse processArticle(SubmitContentRequest request, String userId, String coordination) {
         log.info(">>> processArticle() called");
-        log.info("[{}] Received article submission from user {}", correlation, userId);
+        log.info("[{}] Received article submission from user {}", coordination, userId);
 
         urlValidator.validateOrThrow(request.getContentUrl());
         ArticleExtractionResponse extracted = articleExtractionService.extract(request.getContentUrl());
-        log.info("[{}] Extracted title: {}", correlation, extracted.getTitle());
+        log.info("[{}] Extracted title: {}", coordination, extracted.getTitle());
 
         String slug = UUID.randomUUID().toString();
-        log.info("[{}] Before building contentData map", correlation);
-        log.info("[{}] submittedAt: {}", correlation, request.getSubmittedAt());
-        log.info("[{}] topics: {}", correlation, request.getTopics());
+        log.info("[{}] Before building contentData map", coordination);
+        log.info("[{}] submittedAt: {}", coordination, request.getSubmittedAt());
+        log.info("[{}] topics: {}", coordination, request.getTopics());
 
         Map<String, Object> contentData = Map.of(
                 "content_slug", slug,
@@ -48,11 +48,11 @@ public class ArticleProcessingService {
                 "submitted_at", request.getSubmittedAt().toString()
         );
         try {
-            log.info("[{}] About to call sendToStorage()", correlation);
-            contentStorageClient.sendToStorage(contentData, userId, correlation);
-            log.info("[{}] Finished sendToStorage() successfully", correlation);
+            log.info("[{}] About to call sendToStorage()", coordination);
+            contentStorageClient.sendToStorage(contentData, userId, coordination);
+            log.info("[{}] Finished sendToStorage() successfully", coordination);
         } catch (Exception e) {
-            log.error("[{}] Error while sending to storage: {}", correlation, e.getMessage(), e);
+            log.error("[{}] Error while sending to storage: {}", coordination, e.getMessage(), e);
         }
 
         return ContentSubmissionResponse.builder()
