@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -20,5 +20,5 @@ public class SubmitContentRequest {
 	@JsonProperty("private")
 	private boolean isPrivate;
 	@JsonProperty("submitted_at")
-	private LocalDateTime submittedAt = LocalDateTime.now();
+	private Instant submittedAt = Instant.now();
 }

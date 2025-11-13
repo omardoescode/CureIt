@@ -16,10 +16,10 @@ public class ArticleExtractionController {
     private final ArticleProcessingService articleProcessingService;
     @PostMapping("/submit_content")
     public ResponseEntity<ContentSubmissionResponse> submitContent(@RequestHeader("CureIt-User-Id") String userId,
-                                                                   @RequestHeader("CureIt-Coordination-Id") String coordinationId,
+                                                                   @RequestHeader("CureIt-Coordination-Id") String correlation,
                                                                    @RequestBody SubmitContentRequest request) {
-        log.info("[{}] /submit_content called by {}", coordinationId, userId);
-        var response = articleProcessingService.processArticle(request, userId, coordinationId);
+        log.info("[{}] /submit_content called by {}", correlation, userId);
+        var response = articleProcessingService.processArticle(request, userId, correlation);
         return ResponseEntity.ok(response);
     }
 }
