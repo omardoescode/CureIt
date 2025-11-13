@@ -1,6 +1,6 @@
 services:
-  api_gateway:
-    build: ./api_gateway/
+  api-gateway:
+    build: ./api-gateway/
     container_name: api-gateway
     environment:
       - NODE_ENV
@@ -17,7 +17,7 @@ services:
   content-processing:
     build: ./content-processing
     depends_on:
-      - content_storage
+      - content-storage
     container_name: content-processing
     environment:
       - PORT=${CONTENT_PROCESSING_PORT}
@@ -27,8 +27,8 @@ services:
     networks:
       - backend-net
 
-  content_storage:
-    build: ./content_storage
+  content-storage:
+    build: ./content-storage
     container_name: content-storage
     environment:
       - NODE_ENV
@@ -37,10 +37,10 @@ services:
       - MONGO_URL=mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data?authSource=admin
     depends_on:
       - content-storage-db
-    networks:
-      - backend-net
     ports:
       - "${CONTENT_STORAGE_PORT}:${CONTENT_STORAGE_PORT}"
+    networks:
+      - backend-net
 
   content-storage-db:
     image: mongo:8
@@ -58,4 +58,3 @@ services:
 networks:
   backend-net:
     driver: bridge
-

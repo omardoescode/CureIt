@@ -1,5 +1,4 @@
-FROM maven:3.9.4-eclipse-temurin-21
+FROM eclipse-temurin:21-jdk
 WORKDIR /app
-COPY . .
-RUN mvn dependency:resolve
-CMD ["mvn", "spring-boot:run", "-Dserver.port=${PORT}"]
+COPY target/*.jar app.jar
+ENTRYPOINT ["java","-jar","/app/app.jar"]

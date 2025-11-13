@@ -13,7 +13,7 @@ v1app.post("/content/submit", async (c) => {
   headers.set("CureIt-Coordination-Id", crypto.randomUUID());
 
   logger.info("Forwarding /content/submit request", {
-    correlationId: headers.get("CureIt-Coordination-Id"),
+    coordinationId: headers.get("CureIt-Coordination-Id"),
   });
 
   try {
@@ -37,7 +37,7 @@ v1app.post("/content/submit", async (c) => {
     logger.info(
       `Received from ${env.CONTENT_PROCESSING_SERVICE_URL}/api/submit_content`,
       {
-        correlationId: headers.get("CureIt-Correlation-Id"),
+        correlationId: headers.get("CureIt-Coordination-Id"),
         body,
         headers,
       },

@@ -21,20 +21,18 @@ public class ContentStorageClient {
     @Value("${content.storage.service.url}")
     private String contentStorageUrl;
 
-    private final WebClient webClient;
+    private WebClient webClient;
 
-    public ContentStorageClient() {
+    @PostConstruct
+    public void init() {
         this.webClient = WebClient.builder()
                 .baseUrl(contentStorageUrl)
                 .defaultHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                 .build();
-        log.info("ContentStorageClient initialized with WebClient at: {}", contentStorageUrl);
-    }
-    @PostConstruct
-    public void init() {
         log.info("ContentStorageClient initialized with WebClient, URL: {}", contentStorageUrl);
     }
-    public void sendToStorage(Map<String, Object> contentData, String userId, String coordination) {
+
+    public String sendToStorage(Map<String, Object> contentData, String userId, String coordination) {
         String url = "/api/create_submission";
         log.info("[{}] Sending content to Content Storage Service at {}", coordination, contentStorageUrl + url);
 
@@ -64,6 +62,7 @@ public class ContentStorageClient {
 
             if (response != null) {
                 log.info("[{}] Content successfully stored with slug: {}", coordination, response.getContentSlug());
+								return response.getContentSlug();
             } else {
                 log.error("[{}] Empty response from Content Storage Service", coordination);
                 throw new RuntimeException("Empty response from Content Storage Service");
