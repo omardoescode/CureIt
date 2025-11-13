@@ -1,0 +1,59 @@
+import zValidator from "@/utils/zValidator";
+import { Hono } from "hono";
+import {
+  ContentItemSlugSchema,
+  ContentSubmissionBodySchema,
+} from "./validation/content";
+import {
+  BaseHeadersSchema,
+  BaseProtectedHeadersSchema,
+} from "./validation/headers";
+import { submitContent, getContentItem } from "./service/ContentItem";
+import mongoose from "mongoose";
+import env from "@/utils/env";
+import logger from "@/lib/logger";
+import { logger as logMiddleware } from "hono/logger";
+
+// Connect to database
+await mongoose
+  .connect(env.MONGO_URL)
+  .then(() => logger.info("Connected to mongoose successfully"))
+  .catch((err) => {
+    console.error("Failed to connect to the database");
+    throw err;
+  });
+
+const app = new Hono().basePath("/api");
+
+app.use(logMiddleware());
+
+app.post(
+  "create_submission",
+  zValidator("header", BaseProtectedHeadersSchema),
+  zValidator("json", ContentSubmissionBodySchema),
+  async (c) => {
+    const headers = c.req.valid("header");
+    const body = c.req.valid("json");
+
+    const content_slug = await submitContent(headers, body);
+    return c.json({ content_slug }, 200);
+  },
+);
+
+app.get(
+  "content/:slug",
+  zValidator("header", BaseHeadersSchema),
+  zValidator("param", ContentItemSlugSchema),
+  async (c) => {
+    const headers = c.req.valid("header");
+    const { slug } = c.req.valid("param");
+
+    const content = await getContentItem(headers, slug);
+    return c.json(content, 200);
+  },
+);
+
+export default {
+  fetch: app.fetch,
+  port: env.PORT,
+};
