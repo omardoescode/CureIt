@@ -33,7 +33,13 @@ export interface BookPayload extends Payload {
   is_free: boolean | null;
 }
 
-const contentTypes = ["article", "tweet", "video", "book", "course"] as const;
+export const contentTypes = [
+  "article",
+  "tweet",
+  "video",
+  "book",
+  "course",
+] as const;
 
 export type ContentType = (typeof contentTypes)[number];
 
@@ -41,7 +47,10 @@ export interface IContentItem extends Document<ObjectId> {
   slug: string;
   source_url: string;
   type: ContentType;
+  title: string;
   page_title: string;
+  page_description: string | null;
+  page_author: string | null;
   extracted_at: Date;
   created_at: Date;
   is_private: boolean;

@@ -1,35 +1,18 @@
 import ContentItemSubmission from "@/models/ContentItemSubmission";
 import type { ContentSubmissionBody } from "../validation/content";
 import type { BaseHeaders, BaseProtectedHeaders } from "../validation/headers";
-import ContentItem, { type IContentItem } from "@/models/ContentItem";
+import ContentItem from "@/models/ContentItem";
 import logger from "@/lib/logger";
+import type { IContentItem } from "@/types/ContentItem";
 
 export async function submitContent(
   headers: BaseProtectedHeaders,
-  {
-    author,
-    title,
-    extracted_at,
-    is_private,
-    source_url,
-    type,
-    markdown,
-    submitted_at,
-    topics,
-  }: ContentSubmissionBody,
+  { submitted_at, topics, ...item }: ContentSubmissionBody,
 ): Promise<string> {
-  let content = await ContentItem.findOne({ source_url });
+  let content = await ContentItem.findOne({ source_url: item.source_url });
 
   if (!content) {
-    content = new ContentItem({
-      author,
-      title,
-      extracted_at,
-      source_url,
-      type,
-      is_private,
-      markdown,
-    });
+    content = new ContentItem(item);
     await content.save();
   }
 

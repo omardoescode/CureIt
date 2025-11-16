@@ -1,13 +1,20 @@
 import z from "zod";
 
-const ContentSubmissionBase = z.object({
-  topics: z.array(z.string().nonempty()).optional(),
-  title: z.string(),
-  is_private: z.boolean(),
-  extracted_at: z.iso.datetime(),
-  source_url: z.url(),
-  submitted_at: z.iso.datetime(),
-});
+const ContentSubmissionBase = z
+  .object({
+    topics: z.array(z.string().nonempty()).optional(),
+    title: z.string(),
+    is_private: z.boolean(),
+    extracted_at: z.iso.datetime(),
+    source_url: z.url(),
+    submitted_at: z.iso.datetime(),
+
+    // These are additional metadata that came from processing
+    page_title: z.string(),
+    page_description: z.string().optional(),
+    page_author: z.string().optional(),
+  })
+  .strict();
 
 export const ContentSubmissionBodySchema = z.discriminatedUnion("type", [
   ContentSubmissionBase.extend({
