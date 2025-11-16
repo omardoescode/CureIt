@@ -1,9 +1,6 @@
 import zValidator from "@/utils/zValidator";
 import { Hono } from "hono";
-import {
-  ContentItemSlugSchema,
-  ContentSubmissionBodySchema,
-} from "./validation/content";
+import { ContentItemSlugSchema } from "./validation/content";
 import {
   BaseHeadersSchema,
   BaseProtectedHeadersSchema,
@@ -13,6 +10,7 @@ import mongoose from "mongoose";
 import env from "@/utils/env";
 import logger from "@/lib/logger";
 import { logger as logMiddleware } from "hono/logger";
+import { SubmissionBodySchema } from "./validation/content_url";
 
 // Connect to database
 await mongoose
@@ -28,9 +26,9 @@ const app = new Hono().basePath("/api");
 app.use(logMiddleware());
 
 app.post(
-  "create_submission",
+  "/submit_content",
   zValidator("header", BaseProtectedHeadersSchema),
-  zValidator("json", ContentSubmissionBodySchema),
+  zValidator("json", SubmissionBodySchema),
   async (c) => {
     const headers = c.req.valid("header");
     const body = c.req.valid("json");

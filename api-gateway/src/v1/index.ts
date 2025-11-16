@@ -18,7 +18,7 @@ v1app.post("/content/submit", async (c) => {
 
   try {
     const response = await fetch(
-      `${env.CONTENT_PROCESSING_SERVICE_URL}/api/submit_content`,
+      `${env.CONTENT_STORAGE_SERVICE_URL}/api/submit_content`,
       {
         method: "POST",
         headers,

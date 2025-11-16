@@ -7,6 +7,7 @@ const envSchema = z.object({
     .default("development"),
   LOG_LEVEL: z.enum(["info", "debug", "warn", "error"]).default("info"),
   CONTENT_PROCESSING_SERVICE_URL: z.url(),
+  CONTENT_STORAGE_SERVICE_URL: z.url(),
   PORT: z.string().transform(validPort),
 });
 

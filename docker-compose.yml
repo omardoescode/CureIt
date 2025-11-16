@@ -6,6 +6,7 @@ services:
       - NODE_ENV
       - LOG_LEVEL
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
+      - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
       - PORT=${API_GATEWAY_PORT}
     depends_on:
       - content-processing
@@ -35,6 +36,7 @@ services:
       - LOG_LEVEL
       - PORT=${CONTENT_STORAGE_PORT}
       - MONGO_URL=mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data?authSource=admin
+      - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
     depends_on:
       - content-storage-db
     ports:
