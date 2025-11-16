@@ -1,16 +1,42 @@
 import z from "zod";
 
-export const ContentSubmissionBodySchema = z.object({
+const ContentSubmissionBase = z.object({
   topics: z.array(z.string().nonempty()).optional(),
-  title: z.string().nonempty(),
-  author: z.string().nonempty(),
-  markdown: z.string().optional(),
+  title: z.string(),
   is_private: z.boolean(),
-  type: z.enum(["article"]),
   extracted_at: z.iso.datetime(),
   source_url: z.url(),
   submitted_at: z.iso.datetime(),
 });
+
+export const ContentSubmissionBodySchema = z.discriminatedUnion("type", [
+  ContentSubmissionBase.extend({
+    type: z.literal("article"),
+    author: z.string(),
+    markdown: z.string().optional(),
+  }),
+  ContentSubmissionBase.extend({
+    type: z.literal("tweet"),
+    author: z.string().nonempty(),
+    markdown: z.string().optional(),
+  }),
+  ContentSubmissionBase.extend({
+    type: z.literal("course"),
+    lecture_count: z.number().int().positive().optional(),
+  }),
+  ContentSubmissionBase.extend({
+    type: z.literal("book"),
+    page_count: z.number().int().positive().optional(),
+    edition: z.number().int().positive().optional(),
+    url: z.url().optional(),
+    is_free: z.boolean().default(false),
+  }),
+  ContentSubmissionBase.extend({
+    type: z.literal("video"),
+    duration_seconds: z.number().int().positive().optional(),
+    embed_url: z.url().optional(),
+  }),
+]);
 
 export type ContentSubmissionBody = z.infer<typeof ContentSubmissionBodySchema>;
 
