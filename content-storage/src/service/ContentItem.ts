@@ -39,7 +39,7 @@ export async function submitContent(
 ): Promise<string | InternalServerError> {
   let content = await ContentItem.findOne({ source_url: content_url });
 
-  if (!content) {
+  if (true) {
     const body = await processContentUrl(content_url);
     if (body instanceof AppError) return body;
 
