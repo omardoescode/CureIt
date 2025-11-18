@@ -1,5 +1,6 @@
 package com.cureit.contentprocessing.util;
 
+import com.cureit.contentprocessing.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -78,7 +79,7 @@ public class UrlValidator {
 
     public void validateOrThrow(String url) {
         if (!isValidUrl(url)) {
-            throw new InvalidUrlException("Unsafe or invalid URL: " + url);
+            throw new ApiException("Unsafe or invalid URL: " + url);
         }
     }
 }

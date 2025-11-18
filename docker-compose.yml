@@ -17,8 +17,6 @@ services:
 
   content-processing:
     build: ./content-processing
-    depends_on:
-      - content-storage
     container_name: content-processing
     environment:
       - PORT=${CONTENT_PROCESSING_PORT}
@@ -39,6 +37,7 @@ services:
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
     depends_on:
       - content-storage-db
+      - content-processing
     ports:
       - "${CONTENT_STORAGE_PORT}:${CONTENT_STORAGE_PORT}"
     networks:
