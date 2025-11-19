@@ -5,7 +5,7 @@ export const SubmissionBodySchema = z.object({
   // topics: z.string(),
   topics: z.array(z.string()),
   is_private: z.boolean(),
-  submitted_at: z.iso.date(),
+  submitted_at: z.coerce.date(),
 });
 
 export type SubmissionBody = z.infer<typeof SubmissionBodySchema>;

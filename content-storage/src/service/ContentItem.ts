@@ -17,6 +17,7 @@ async function processContentUrl(
   const response = await fetch(
     `${env.CONTENT_PROCESSING_SERVICE_URL}/api/process`,
     {
+      method: "POST",
       body: JSON.stringify({ content_url }),
     },
   );
@@ -40,12 +41,15 @@ export async function submitContent(
   let content = await ContentItem.findOne({ source_url: content_url });
 
   if (!content) {
+    logger.info(
+      `Content (content_url=${content_url}) not found in cache. Proceeding to processing step`,
+    );
     const body = await processContentUrl(content_url);
     if (body instanceof AppError) return body;
 
     content = new ContentItem({ ...body, is_private });
     await content.save();
-    logger.info(`Added a new content item:  content_slug=${content.slug}`);
+    logger.info(`Added a new content item: content_slug=${content.slug}`);
   }
 
   // Add a submission

@@ -20,7 +20,6 @@ services:
     container_name: content-processing
     environment:
       - PORT=${CONTENT_PROCESSING_PORT}
-      - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
     ports:
       - "${CONTENT_PROCESSING_PORT}:${CONTENT_PROCESSING_PORT}"
     networks:
