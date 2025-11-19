@@ -57,11 +57,6 @@ public class ContentProcessingService {
         String pageDescription = extractData.extract(doc, "og:description", null);
         String pageAuthor = extractData.extract(doc, "author", null);
 
-//        String title = extractData.extractTitle(doc, pageTitle);
-        String title = pageTitle;
-        String author = extractData.extractAuthor(doc, pageAuthor);
-        String markdown = FlexmarkHtmlConverter.builder().build().convert(doc.body().html());
-
         Elements imgs = doc.select("img");
         for (Element img : imgs) {
             String imgUrl = img.absUrl("src");
@@ -75,6 +70,15 @@ public class ContentProcessingService {
                 }
             }
         }
+
+//        String title = extractData.extractTitle(doc, pageTitle);
+        String title = pageTitle;
+        String author = extractData.extractAuthor(doc, pageAuthor);
+
+        String markdown = FlexmarkHtmlConverter.builder().build().convert(doc.body().html());
+        String markdownPreview = markdown.length() > 10000
+                ? markdown.substring(0, 10000) + "... [TRUNCATED]"
+                : markdown;
 
         String slug = generateSlug.generate(pageTitle != null ? pageTitle : url);
 
@@ -95,6 +99,7 @@ public class ContentProcessingService {
                 .pageAuthor(pageAuthor)
                 .title(title)
                 .author(author)
+                .markdownPreview(markdownPreview)
                 .markdown(markdown)
                 .build();
     }

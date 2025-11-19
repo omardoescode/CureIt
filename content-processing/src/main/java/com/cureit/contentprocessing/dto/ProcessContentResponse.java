@@ -1,5 +1,6 @@
 package com.cureit.contentprocessing.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
@@ -29,5 +30,7 @@ public class ProcessContentResponse {
 
     // if article or tweet
     private String author;
+    @JsonIgnore
     private String markdown;
+    private String markdownPreview;
 }
