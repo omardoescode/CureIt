@@ -1,6 +1,7 @@
 package com.cureit.contentprocessing.exception;
 
 import com.cureit.contentprocessing.dto.ErrorResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -23,6 +24,17 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 "INTERNAL_SERVER_ERROR",
                 null
+        );
+    }
+
+    @ExceptionHandler(MissingHeaderException.class)
+    public ResponseEntity<ErrorResponse> handleMissingHeader(MissingHeaderException ex) {
+        return ResponseEntity.badRequest().body(
+                buildErrorResponse(
+                        "coordination id is missing",
+                        "NO_COORDINATION_ID",
+                        Map.of("reason", ex.getHeader())
+                )
         );
     }
 

@@ -2,6 +2,7 @@ package com.cureit.contentprocessing.service;
 
 import com.cureit.contentprocessing.dto.ProcessContentRequest;
 import com.cureit.contentprocessing.dto.ProcessContentResponse;
+import com.cureit.contentprocessing.exception.ApiException;
 import com.cureit.contentprocessing.util.ClassifyType;
 import com.cureit.contentprocessing.util.ExtractData;
 import com.cureit.contentprocessing.util.GenerateSlug;
@@ -15,10 +16,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.MissingRequestHeaderException;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class ContentProcessingService {
     private final ExtractData extractData;
 
     public ProcessContentResponse processContent(ProcessContentRequest request, String coordination) {
+
         log.info("[{}] Received content processing request", coordination);
 
         String url = request.getContentUrl();
@@ -48,7 +52,6 @@ public class ContentProcessingService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to fetch content from URL: " + url, e);
         }
-
 
 
         String type = classifyType.determineType(url, doc).toString().toLowerCase();
