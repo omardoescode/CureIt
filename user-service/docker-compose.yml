@@ -1,0 +1,41 @@
+services:
+  user-service:
+    container_name: user_sql
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: userDB
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - users-postgres-date:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - users-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:latest
+    container_name: redis_users
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  mail-dev:
+    container_name: ms-mail-dev-new
+    image: maildev/maildev
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    networks:
+      - users-net
+    restart: unless-stopped
+networks:
+  users-net:
+    driver: bridge
+
+volumes:
+  users-postgres-date:
+  redis_data:
