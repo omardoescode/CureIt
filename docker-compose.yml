@@ -68,6 +68,24 @@ services:
     volumes:
       - ./persistence.local/user-db:/var/lib/postgresql
 
+  redis:
+    image: redis:latest
+    container_name: redis_users
+    ports:
+      - "${REDIS_USERS_PORT}:${REDIS_USERS_PORT}"
+    volumes:
+      - ./persistence.local/redis-data:/data
+
+  mail-dev:
+    container_name: ms-mail-dev-new
+    image: maildev/maildev
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    networks:
+      - backend-net
+    restart: unless-stopped
+
 networks:
   backend-net:
     driver: bridge

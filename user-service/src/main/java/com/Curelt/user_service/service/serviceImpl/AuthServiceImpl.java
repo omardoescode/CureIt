@@ -51,16 +51,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public LoginRegisterResponse registerUser(UserRegisterRequest request , MultipartFile profilePicture){
+    public LoginRegisterResponse registerUser(UserRegisterRequest request , MultipartFile profilePicture) {
         validateEmailNotUsedBefore(request.email());
-        User user= userMapper.toUser(request);
+        User user = userMapper.toUser(request);
         user.setRole(UserRole.USER);
         user.setPassword(passwordEncoder.encode(request.password()));
 
 
-        File file = fileService.handleFileUpload(profilePicture , FileType.PROFILE_PICTURE, user);
-
-        fileRepository.save(file);
+        if (profilePicture != null) {
+            File file = fileService.handleFileUpload(profilePicture, FileType.PROFILE_PICTURE, user);
+            fileRepository.save(file);
+        }
         userRepository.save(user);
         return generateLoginRegisterResponse(user);
 
