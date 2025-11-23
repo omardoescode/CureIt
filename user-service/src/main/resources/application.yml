@@ -1,5 +1,5 @@
 server:
-  port: 8086
+  port: 4003
 
 spring:
   application:
@@ -18,9 +18,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/userDB
-    username: postgres
-    password: root
+    url: jdbc:postgresql://localhost:5432/${USER_DB_DATABASE_NAME}
+    username: ${USER_DB_USERNAME}
+    password: ${USER_DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -50,5 +50,3 @@ cloudinary:
   cloud_name: dtbzftsrr
   api_key: 248871858394443
   api_secret: pY8vT4IT8-De0qyd560_Ce1FbjQ
-
-
