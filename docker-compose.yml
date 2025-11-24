@@ -36,7 +36,7 @@ services:
       - backend-net
     depends_on:
       - user-db
-      - redis
+      - redis-users
       - mail-dev
 
   content-processing:
@@ -92,7 +92,7 @@ services:
     volumes:
       - ./persistence.local/user-db:/var/lib/postgresql
 
-  redis:
+  redis-users:
     image: redis:latest
     container_name: redis-users
     ports:
@@ -109,6 +109,14 @@ services:
     networks:
       - backend-net
     restart: unless-stopped
+
+  redis-curation:
+    image: redis:latest
+    container_name: redis-curation
+    ports:
+      - "${REDIS_CURATION_PORT}:${REDIS_CURATION_PORT}"
+    volumes:
+      - ./persistence.local/redis-data:/data
 
 volumes:
   persistence.local:
