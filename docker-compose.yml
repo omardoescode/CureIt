@@ -86,6 +86,9 @@ services:
       - backend-net
     restart: unless-stopped
 
+volumes:
+  persistence.local:
+
 networks:
   backend-net:
     driver: bridge

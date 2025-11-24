@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -36,32 +37,27 @@ public class PasswordServiceImpl implements PasswordService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("This email isn't found"));
 
-
-        redisService.delete(String.valueOf(user.getId()));
+        String userId = user.getId().toString();
+        redisService.delete(userId);
         String otp = generateOTP();
-        redisService.setInRedis(String.valueOf(user.getId()), otp, 15);
-        emailService.sendOTPCode(otp,user.getEmail());
-
-
+        redisService.setInRedis(userId, otp, 15);
+        emailService.sendOTPCode(otp, user.getEmail());
     }
     public void resetPassword(ResetPasswordRequest resetPasswordRequest) {
         User user = userRepository.findByEmail(resetPasswordRequest.email())
                 .orElseThrow(() -> new UserNotFoundException("This email isn't found"));
-        Long userId=user.getId();
-        if (redisService.hasKey(String.valueOf(userId))) {
-            String storedOTP=redisService.get(String.valueOf(userId));
+        String userId = user.getId().toString();
+        if (redisService.hasKey(userId)) {
+            String storedOTP = redisService.get(userId);
             if (!resetPasswordRequest.otp().equals(storedOTP)) {
                 throw new InvalidOtpException("Invalid OTP");
             }
             user.setPassword(passwordEncoder.encode(resetPasswordRequest.newPassword()));
             userRepository.save(user);
-            redisService.delete(String.valueOf(userId));
-
-        }
-        else{
+            redisService.delete(userId);
+        } else {
             throw new OtpExpiredException("OTP has expired");
         }
-
     }
     public void changePassword(ChangePasswordRequest changePasswordRequest) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

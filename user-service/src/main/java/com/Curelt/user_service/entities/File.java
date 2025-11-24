@@ -3,6 +3,7 @@ package com.Curelt.user_service.entities;
 import com.Curelt.user_service.enums.FileType;
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -12,8 +13,9 @@ import lombok.*;
 @Builder
 public class File {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid default uuidv7()")
+    private UUID id;
 
     private String url;
     private String publicId;

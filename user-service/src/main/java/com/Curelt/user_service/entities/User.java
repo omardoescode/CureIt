@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Table(name = "users")
 @Entity
@@ -24,8 +25,9 @@ import java.util.List;
 @AllArgsConstructor
 public class User implements UserDetails {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid default uuidv7()")
+    private UUID id;
 
     private String firstName;
     private String lastName;
