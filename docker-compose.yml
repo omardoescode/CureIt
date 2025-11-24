@@ -15,6 +15,30 @@ services:
     networks:
       - backend-net
 
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    environment:
+      - PORT=${USER_SERVICE_PORT}
+      - USER_DB_DATABASE_NAME
+      - USER_DB_USERNAME
+      - USER_DB_PASSWORD
+      - USER_DB_PORT
+      - USER_DB_HOST=user-db
+      - REDIS_PORT=${REDIS_USERS_PORT}
+      - REDIS_HOST=redis
+      - JWT_SECRET_KEY=${USER_DB_JWT_SECRET_KEY}
+      - JWT_ACCESS_TOKEN_EXPIRATION=${USER_DB_JWT_ACCESS_TOKEN_EXPIRATION}
+      - JWT_REFRESH_TOKEN_EXPIRATION=${USER_DB_JWT_REFRESH_TOKEN_EXPIRATION}
+    ports:
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+    networks:
+      - backend-net
+    depends_on:
+      - user-db
+      - redis
+      - mail-dev
+
   content-processing:
     build: ./content-processing
     container_name: content-processing
@@ -70,7 +94,7 @@ services:
 
   redis:
     image: redis:latest
-    container_name: redis_users
+    container_name: redis-users
     ports:
       - "${REDIS_USERS_PORT}:${REDIS_USERS_PORT}"
     volumes:
