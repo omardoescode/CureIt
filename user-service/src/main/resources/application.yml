@@ -13,12 +13,12 @@ spring:
 
   data:
     redis:
-      host: localhost
+      host: ${REDIS_HOST}
       port: ${REDIS_PORT}
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/${USER_DB_DATABASE_NAME}
+    url: jdbc:postgresql://${USER_DB_HOST}:${USER_DB_PORT}/${USER_DB_DATABASE_NAME}
     username: ${USER_DB_USERNAME}
     password: ${USER_DB_PASSWORD}
 
@@ -42,9 +42,9 @@ spring:
       mail.smtp.writetimeout: 5000
 
 jwt:
-  secret-key: ec5f22a164d4fc21baa96b5568ec51e9778a2abce07df7eef3a4bf1520066596
-  access-token-expiration: 86400000
-  refresh-token-expiration: 604800000
+  secret-key: ${JWT_SECRET_KEY}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
 
 cloudinary:
   cloud_name: dtbzftsrr
