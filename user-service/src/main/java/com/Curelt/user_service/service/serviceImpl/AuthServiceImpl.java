@@ -9,6 +9,7 @@ import com.Curelt.user_service.entities.User;
 import com.Curelt.user_service.enums.FileType;
 import com.Curelt.user_service.enums.UserRole;
 import com.Curelt.user_service.exceptionsAndHandlers.DuplicatedEmailException;
+import com.Curelt.user_service.exceptionsAndHandlers.DuplicatedUsernameException;
 import com.Curelt.user_service.exceptionsAndHandlers.UserNotFoundException;
 import com.Curelt.user_service.mapper.UserMapper;
 import com.Curelt.user_service.repository.FileRepository;
@@ -38,8 +39,6 @@ import java.util.Optional;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
-
-
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
 
@@ -53,10 +52,10 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public LoginRegisterResponse registerUser(UserRegisterRequest request , MultipartFile profilePicture) {
         validateEmailNotUsedBefore(request.email());
+       validateUsernameNotUsedBefore(request.userName());
         User user = userMapper.toUser(request);
         user.setRole(UserRole.USER);
         user.setPassword(passwordEncoder.encode(request.password()));
-
 
         if (profilePicture != null) {
             File file = fileService.handleFileUpload(profilePicture, FileType.PROFILE_PICTURE, user);
@@ -64,7 +63,6 @@ public class AuthServiceImpl implements AuthService {
         }
         userRepository.save(user);
         return generateLoginRegisterResponse(user);
-
     }
     @Override
     public LoginRegisterResponse authenticate(LoginRequest loginRequest) {
@@ -120,6 +118,12 @@ public class AuthServiceImpl implements AuthService {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent()){
             throw new DuplicatedEmailException("Email already exists");
+        }
+    }
+    public void validateUsernameNotUsedBefore(String userName){
+        Optional<User> user = userRepository.findByUserName(userName);
+        if (user.isPresent()){
+            throw new DuplicatedUsernameException("Username already exists");
         }
     }
     public User validateEmailExists(String email){
