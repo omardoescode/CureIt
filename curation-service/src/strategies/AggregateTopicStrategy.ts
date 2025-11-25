@@ -1,6 +1,6 @@
-import CurationStrategy, { type CurationUpdate } from "./CurationStrategy";
+import CurationStrategy from "./CurationStrategy";
 import moment from "moment";
-import type { InteractionEvent } from "@/validation";
+import type { CurationUpdate, InteractionEvent } from "@/validation";
 import assert from "assert";
 import type Redis from "ioredis";
 import logger from "@/lib/logger";
@@ -20,17 +20,15 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     return old_weight * Math.exp(-this.TIME_DECAY_FACTOR * dt_seconds);
   }
 
-  private get_hash_key(content_id: string): string {
-    return this.get_key(`curation:${content_id}`);
-  }
+  get_key = (content_id: string) => `curation:${content_id}:topics`
 
   override async process(
     event: InteractionEvent,
   ): Promise<CurationUpdate | null> {
     assert(event.type === "modify_topic");
-    const { topic, weight } = event.payload;
+    const { topic, user_weight: weight } = event;
     const now = moment(event.timestamp);
-    const hash_key = this.get_hash_key(event.content_id);
+    const hash_key = this.get_key(event.content_id);
 
     const all_data = await this.redis.hgetall(hash_key);
 
@@ -76,21 +74,21 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     if (new_total_weight < this.STABILITY_MINIMUM_DEM) return null;
     if (new_relative > this.THRESHOLD && old_relative <= this.THRESHOLD) {
       return {
-        contentId: event.content_id,
-        fieldToUpdate: "topic",
-        newValue: topic,
-        confidenceScore: new_total_weight,
+        content_id: event.content_id,
         reason: `Topic "${topic}" crossed inclusion threshold (${this.THRESHOLD}).`,
+        type: 'topic_list_updated',
+        topic: topic,
+        action: "added",
       };
     }
 
     if (new_relative < this.THRESHOLD && old_relative >= this.THRESHOLD) {
       return {
-        contentId: event.content_id,
-        fieldToUpdate: "topic",
-        newValue: topic,
-        confidenceScore: new_total_weight,
+        content_id: event.content_id,
         reason: `Topic "${topic}" dropped below exclusion threshold (${this.THRESHOLD}).`,
+        type: 'topic_list_updated',
+        topic: topic,
+        action: "removed",
       };
     }
 
