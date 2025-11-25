@@ -10,7 +10,7 @@ export default class ItemVoteStrategy extends CurationStrategy {
     return {
       content_id: event.content_id,
       reason: "Content item received a vote.",
-      incr: event.weight,
+      incr: event.user_weight,
       type: 'item_vote_update',
     }
   }

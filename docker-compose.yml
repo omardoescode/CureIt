@@ -25,7 +25,7 @@ services:
       - USER_DB_PASSWORD
       - USER_DB_PORT
       - USER_DB_HOST=user-db
-      - REDIS_PORT=${REDIS_USERS_PORT}
+      - REDIS_PORT=${REDIS_PORT}
       - REDIS_HOST=redis
       - JWT_SECRET_KEY=${USER_DB_JWT_SECRET_KEY}
       - JWT_ACCESS_TOKEN_EXPIRATION=${USER_DB_JWT_ACCESS_TOKEN_EXPIRATION}
@@ -36,7 +36,7 @@ services:
       - backend-net
     depends_on:
       - user-db
-      - redis-users
+      - redis
       - mail-dev
 
   content-processing:
@@ -92,14 +92,6 @@ services:
     volumes:
       - ./persistence.local/user-db:/var/lib/postgresql
 
-  redis-users:
-    image: redis:latest
-    container_name: redis-users
-    ports:
-      - "${REDIS_USERS_PORT}:${REDIS_USERS_PORT}"
-    volumes:
-      - ./persistence.local/redis-data:/data
-
   mail-dev:
     container_name: ms-mail-dev-new
     image: maildev/maildev
@@ -109,16 +101,6 @@ services:
     networks:
       - backend-net
     restart: unless-stopped
-
-  redis-curation:
-    image: redis:latest
-    container_name: redis-curation
-    ports:
-      - "${REDIS_CURATION_PORT}:6379"
-    volumes:
-      - ./persistence.local/redis-data:/data
-    networks:
-      - backend-net
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.4
@@ -150,6 +132,14 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     networks:
       - backend-net
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - ./persistence.local/redis-data:/data
 
 volumes:
   persistence.local:

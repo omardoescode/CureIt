@@ -49,6 +49,7 @@ const consumer = kafka.consumer({
   maxWaitTimeInMs: 5000,
   rebalanceTimeout: 60000,
 });
+const admin = kafka.admin();
 
 await Promise.all([
   redis
@@ -56,6 +57,13 @@ await Promise.all([
     .then(() => logger.info("Redis connected successfully"))
     .catch((err) => {
       logger.error(`Failed to connect to redis: ${err}`);
+      process.exit(1);
+    }),
+  admin
+    .connect()
+    .then(() => logger.info("Admin connected successfully"))
+    .catch((err) => {
+      logger.error(`Failed to connect to Kafka admin: ${err}`);
       process.exit(1);
     }),
   producer
@@ -73,6 +81,25 @@ await Promise.all([
       process.exit(1);
     }),
 ]).then(() => logger.info("All connections are established successfully"));
+
+await admin
+  .createTopics({
+    topics: [
+      {
+        topic: env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
+        numPartitions: 1,
+      },
+    ],
+  })
+  .then(() =>
+    logger.info(`Created topic "${env.KAFKA_CURATION_UPDATE_TOPIC_NAME}"`),
+  )
+  .catch(() => {
+    logger.error(
+      `Failed to create topic "${env.KAFKA_CURATION_UPDATE_TOPIC_NAME}"`,
+    );
+    process.exit(1);
+  });
 
 const service = new CurationService(redis, producer);
 

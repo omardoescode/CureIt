@@ -2,11 +2,7 @@ import z from "zod";
 
 const NonZeroNumber = z.union([z.int().positive(), z.int().negative()]);
 
-const InteractionTypeSchema = z.enum([
-  "modify_type",
-  "modify_topic",
-  "vote",
-]);
+const InteractionTypeSchema = z.enum(["modify_type", "modify_topic", "vote"]);
 
 export type InteractionType = z.infer<typeof InteractionTypeSchema>;
 
@@ -15,19 +11,19 @@ const BaseInteractionEvent = z.object({
   timestamp: z.coerce.date(),
 });
 
-
 export const InteractionEventSchema = z.discriminatedUnion("type", [
   BaseInteractionEvent.extend({
     type: z.literal(InteractionTypeSchema.enum.modify_topic),
     topic: z
       .string()
       .nonempty()
-      .regex(/^(\d+|[a-zA-Z]+|:)$/).transform((x) => x.toLowerCase()),
+      .regex(/^(\d+|[a-zA-Z]+|:)$/)
+      .transform((x) => x.toLowerCase()),
     user_weight: NonZeroNumber,
   }),
   BaseInteractionEvent.extend({
     type: z.literal(InteractionTypeSchema.enum.vote),
-    weight: NonZeroNumber
+    user_weight: NonZeroNumber,
   }),
   BaseInteractionEvent.extend({
     type: z.literal(InteractionTypeSchema.enum.modify_type),
@@ -36,7 +32,7 @@ export const InteractionEventSchema = z.discriminatedUnion("type", [
       .string()
       .nonempty()
       .regex(/^(\d+|[a-zA-Z]+|:)$/)
-      .transform((x) => x.toLowerCase())
+      .transform((x) => x.toLowerCase()),
   }),
 ]);
 
@@ -46,7 +42,6 @@ const BaseCurationUpdateSchema = z.object({
   content_id: z.string().nonempty(),
   reason: z.string().nonempty(),
 });
-
 
 export const CurationUpdateSchmea = z.discriminatedUnion("type", [
   BaseCurationUpdateSchema.extend({
@@ -60,8 +55,9 @@ export const CurationUpdateSchmea = z.discriminatedUnion("type", [
   }),
   BaseCurationUpdateSchema.extend({
     type: z.literal("item_vote_update"),
-    incr: NonZeroNumber
+    incr: NonZeroNumber,
   }),
-])
+]);
 
 export type CurationUpdate = z.infer<typeof CurationUpdateSchmea>;
+

@@ -7,8 +7,8 @@ import logger from "@/lib/logger";
 
 export default class AggregateTopicStrategy extends CurationStrategy {
   private TIME_DECAY_FACTOR = 0.5;
-  private THRESHOLD = 0.2;
   private STABILITY_MINIMUM_DEM = 5.0;
+  private THRESHOLD = 0.2;
   private timestamp_key = "_last_update";
 
   constructor(redis: Redis) {
@@ -20,17 +20,19 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     return old_weight * Math.exp(-this.TIME_DECAY_FACTOR * dt_seconds);
   }
 
-  get_key = (content_id: string) => `curation:${content_id}:topics`
-
   override async process(
     event: InteractionEvent,
   ): Promise<CurationUpdate | null> {
     assert(event.type === "modify_topic");
     const { topic, user_weight: weight } = event;
     const now = moment(event.timestamp);
-    const hash_key = this.get_key(event.content_id);
+    const hash_key = `curation:${event.content_id}:topics_data`;
+    const included_topics_key = `curation:${event.content_id}:included_topics`;
 
-    const all_data = await this.redis.hgetall(hash_key);
+    const [all_data, included_topics] = await Promise.all([
+      this.redis.hgetall(hash_key),
+      this.redis.get(included_topics_key),
+    ]);
 
     const last_update_str = all_data[this.timestamp_key];
     const last_update = last_update_str ? moment(last_update_str) : now;
@@ -72,21 +74,21 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     await this.redis.hset(hash_key, update_payload);
 
     if (new_total_weight < this.STABILITY_MINIMUM_DEM) return null;
-    if (new_relative > this.THRESHOLD && old_relative <= this.THRESHOLD) {
+    if (new_relative > this.THRESHOLD) {
       return {
         content_id: event.content_id,
-        reason: `Topic "${topic}" crossed inclusion threshold (${this.THRESHOLD}).`,
-        type: 'topic_list_updated',
+        reason: `Topic "${topic}" crossed inclusion threshold (${new_relative} > ${this.THRESHOLD}).`,
+        type: "topic_list_updated",
         topic: topic,
         action: "added",
       };
     }
 
-    if (new_relative < this.THRESHOLD && old_relative >= this.THRESHOLD) {
+    if (new_relative < this.THRESHOLD && old_relative > this.THRESHOLD) {
       return {
         content_id: event.content_id,
-        reason: `Topic "${topic}" dropped below exclusion threshold (${this.THRESHOLD}).`,
-        type: 'topic_list_updated',
+        reason: `Topic "${topic}" dropped below exclusion threshold (${new_relative} < ${this.THRESHOLD}).`,
+        type: "topic_list_updated",
         topic: topic,
         action: "removed",
       };

@@ -1,6 +1,10 @@
 import type CurationStrategy from "./strategies/CurationStrategy";
 import ModifyTopicStrategy from "./strategies/AggregateTopicStrategy";
-import type { CurationUpdate, InteractionEvent, InteractionType } from "./validation";
+import type {
+  CurationUpdate,
+  InteractionEvent,
+  InteractionType,
+} from "./validation";
 import type { Producer } from "kafkajs";
 import type { Redis } from "ioredis";
 import logger from "./lib/logger";
@@ -30,10 +34,11 @@ export default class CurationService {
     }
 
     const payload = await strategy.process(event);
-    logger.info(payload);
     if (payload) {
       const { reason, ...rest } = payload;
-      logger.info(`Emitting curation update for content_id=${rest.content_id}. reason=${reason}`);
+      logger.info(
+        `Emitting curation update for content_id=${rest.content_id}. reason=${reason}`,
+      );
       await this.emitEvent(rest);
     }
   }
