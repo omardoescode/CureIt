@@ -14,6 +14,7 @@ const envSchema = z.object({
   KAFKA_CLIENT_ID: z.string().nonempty(),
   KAFKA_GROUP_ID: z.string().nonempty(),
   KAFKA_INTERACTION_EVENTS_TOPIC_NAME: z.string().nonempty(),
+  KAFKA_CURATION_UPDATE_TOPIC_NAME: z.string().nonempty(),
   REDIS_URL: z.string().nonempty(),
 });
 
