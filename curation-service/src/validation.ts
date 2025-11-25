@@ -22,7 +22,8 @@ export const InteractionEventSchema = z.discriminatedUnion("type", [
       topic: z
         .string()
         .nonempty()
-        .regex(/^(\d+|[a-zA-Z]+|:)$/),
+        .regex(/^(\d+|[a-zA-Z]+|:)$/)
+        .transform((x) => x.toLowerCase()),
       weight: z.union([z.int().positive(), z.int().negative()]),
     }),
   }),

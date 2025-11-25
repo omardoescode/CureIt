@@ -1,8 +1,9 @@
-import type { RedisClientType } from "redis";
 import CurationStrategy, { type CurationUpdate } from "./CurationStrategy";
 import moment from "moment";
 import type { InteractionEvent } from "@/validation";
 import assert from "assert";
+import type Redis from "ioredis";
+import logger from "@/lib/logger";
 
 export default class AggregateTopicStrategy extends CurationStrategy {
   private TIME_DECAY_FACTOR = 0.5;
@@ -10,7 +11,7 @@ export default class AggregateTopicStrategy extends CurationStrategy {
   private STABILITY_MINIMUM_DEM = 5.0;
   private timestamp_key = "_last_update";
 
-  constructor(redis: RedisClientType) {
+  constructor(redis: Redis) {
     super(redis);
   }
 
@@ -26,12 +27,12 @@ export default class AggregateTopicStrategy extends CurationStrategy {
   override async process(
     event: InteractionEvent,
   ): Promise<CurationUpdate | null> {
-    assert(event.type !== "modify_topic");
+    assert(event.type === "modify_topic");
     const { topic, weight } = event.payload;
     const now = moment(event.timestamp);
     const hash_key = this.get_hash_key(event.content_id);
 
-    const all_data = await this.redis.hGetAll(hash_key);
+    const all_data = await this.redis.hgetall(hash_key);
 
     const last_update_str = all_data[this.timestamp_key];
     const last_update = last_update_str ? moment(last_update_str) : now;
@@ -69,7 +70,8 @@ export default class AggregateTopicStrategy extends CurationStrategy {
       update_payload[field] = wgt.toString();
     }
 
-    await this.redis.hSet(hash_key, update_payload);
+    logger.info(update_payload);
+    await this.redis.hset(hash_key, update_payload);
 
     if (new_total_weight < this.STABILITY_MINIMUM_DEM) return null;
     if (new_relative > this.THRESHOLD && old_relative <= this.THRESHOLD) {

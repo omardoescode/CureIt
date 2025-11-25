@@ -1,5 +1,5 @@
 import type { InteractionEvent } from "@/validation";
-import type { RedisClientType } from "redis";
+import type Redis from "ioredis";
 
 export interface CurationUpdate {
   contentId: string;
@@ -10,7 +10,7 @@ export interface CurationUpdate {
 }
 
 export default abstract class CurationStrategy {
-  constructor(protected redis: RedisClientType) {}
+  constructor(protected redis: Redis) {}
 
   abstract process(event: InteractionEvent): Promise<CurationUpdate | null>;
 
