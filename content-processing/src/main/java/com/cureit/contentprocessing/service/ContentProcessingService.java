@@ -13,10 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.safety.Safelist;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.MissingRequestHeaderException;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -50,16 +48,28 @@ public class ContentProcessingService {
                     .userAgent("Mozilla/5.0 (CureItBot/1.0)")
                     .get();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch content from URL: " + url, e);
+            throw new ApiException("failed to fetch content from this url", "INVALID_URL", Map.of(
+                    "reason", url
+            ));
         }
 
 
-        String type = classifyType.determineType(url, doc).toString().toLowerCase();
+        String type = classifyType.classify(doc, url).toString();
 
         // extract metadata
-        String pageTitle = extractData.extract(doc, "og:title", "title");
-        String pageDescription = extractData.extract(doc, "og:description", null);
-        String pageAuthor = extractData.extract(doc, "author", null);
+        String pageTitle = doc.title();
+        if (pageTitle == null || pageTitle.trim().isEmpty()) {
+            throw new ApiException("couldn't extract title", "NO_TITLE", Map.of(
+                    "reason", "title"
+            ));
+        }
+
+        String pageDescription = doc.select("meta[name=description]").attr("content");
+
+        String pageAuthor = doc.select("meta[name=author]").attr("content");
+        if (pageAuthor != null && pageAuthor.isEmpty()) {
+            pageAuthor = null;
+        }
 
         Elements imgs = doc.select("img");
         for (Element img : imgs) {
@@ -75,8 +85,7 @@ public class ContentProcessingService {
             }
         }
 
-//        String title = extractData.extractTitle(doc, pageTitle);
-        String title = pageTitle;
+        String title = extractData.extractTitle(doc);
         String author = extractData.extractAuthor(doc, pageAuthor);
 
         String markdown = "";
@@ -85,34 +94,7 @@ public class ContentProcessingService {
         doc.select("script, style, nav, header, footer, dialog, noscript").remove();
 
         if ("article".equals(type)) {
-
-            Element article = doc.selectFirst("article");
-            String htmlToConvert;
-
-            if (article != null) {
-                htmlToConvert = article.outerHtml();
-            } else {
-                // fallback when no <article> tag exists
-                htmlToConvert = doc.body().html();
-            }
-
-            // clean HTML before converting
-            Document cleaned = Jsoup.parse(htmlToConvert);
-            cleaned.outputSettings().prettyPrint(false);
-
-            cleaned.select("[style]").removeAttr("style");
-            cleaned.select("span").unwrap();
-            cleaned.select("div").unwrap();
-            cleaned.select("iframe, video, audio, source, button, form").remove();
-            cleaned.select("[data-testid=paywall], .paywall").remove();
-
-            // convert to Markdown
-            String rawMarkdown = FlexmarkHtmlConverter.builder()
-                    .build()
-                    .convert(cleaned.body().html());
-
-            markdown = cleanMarkdown(rawMarkdown);
-
+            markdown = extractData.extractMarkdown(doc);
             markdownPreview = markdown.length() > 10000
                     ? markdown.substring(0, 10000) + "... [TRUNCATED]"
                     : markdown;
@@ -140,24 +122,5 @@ public class ContentProcessingService {
                 .markdownPreview(markdownPreview)
                 .markdown(markdown)
                 .build();
-    }
-
-    private String cleanMarkdown(String markdown) {
-
-        markdown = markdown.replaceAll("(?m)^=+$", ""); // remove ==
-        markdown = markdown.replaceAll("\n{3,}", "\n\n"); // merge empty lines
-        markdown = markdown.replaceAll("!\\[undefined\\]\\([^)]*\\)", ""); // remove undefined images
-        markdown = markdown.replaceAll("(?m)^\\d{1,3}\\s*$", "");
-        markdown = markdown.replaceAll("(?m)^\\s+$", "");
-        markdown = markdown.replaceAll("\\[\\]\\([^)]*\\)", "");
-        markdown = markdown.replaceAll("(?m)^(#+)([^#\\s])", "$1 $2");
-        markdown = markdown.replaceAll("(?m)^\\|?(-+\\|)+-+$", "");
-        markdown = markdown.replaceAll("(?m)^>\\s*>+", "> ");
-        markdown = markdown
-                .replaceAll("[ \\t]+$", "")   // trailing spaces
-                .replaceAll("(?m)^\\s{1,3}\\n", "\n") // empty indented lines
-                .trim();
-
-        return markdown;
     }
 }
