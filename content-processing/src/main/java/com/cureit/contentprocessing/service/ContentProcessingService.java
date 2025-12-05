@@ -7,7 +7,6 @@ import com.cureit.contentprocessing.util.ClassifyType;
 import com.cureit.contentprocessing.util.ExtractData;
 import com.cureit.contentprocessing.util.GenerateSlug;
 import com.cureit.contentprocessing.util.UrlValidator;
-import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -43,16 +42,15 @@ public class ContentProcessingService {
         Document doc;
 
         try {
+            log.info("Connected to url: {}", url);
             doc = Jsoup.connect(url)
                     .timeout(7000)
                     .userAgent("Mozilla/5.0 (CureItBot/1.0)")
                     .get();
         } catch (Exception e) {
             throw new ApiException("failed to fetch content from this url", "INVALID_URL", Map.of(
-                    "reason", url
-            ));
+                    "reason", url));
         }
-
 
         String type = classifyType.classify(doc, url).toString();
 
@@ -60,8 +58,7 @@ public class ContentProcessingService {
         String pageTitle = doc.title();
         if (pageTitle == null || pageTitle.trim().isEmpty()) {
             throw new ApiException("couldn't extract title", "NO_TITLE", Map.of(
-                    "reason", "title"
-            ));
+                    "reason", "title"));
         }
 
         String pageDescription = doc.select("meta[name=description]").attr("content");
@@ -89,18 +86,12 @@ public class ContentProcessingService {
         String author = extractData.extractAuthor(doc, pageAuthor);
 
         String markdown = "";
-        String markdownPreview = "";
 
         doc.select("script, style, nav, header, footer, dialog, noscript").remove();
 
         if ("article".equals(type)) {
             markdown = extractData.extractMarkdown(doc);
-            markdownPreview = markdown.length() > 10000
-                    ? markdown.substring(0, 10000) + "... [TRUNCATED]"
-                    : markdown;
         }
-
-        String slug = generateSlug.generate(pageTitle != null ? pageTitle : url);
 
         // extract topics -> will be changed
         List<String> topics = Collections.emptyList();
@@ -108,7 +99,6 @@ public class ContentProcessingService {
         Instant now = Instant.now();
 
         return ProcessContentResponse.builder()
-                .contentSlug(slug)
                 .topics(topics)
                 .type(type)
                 .extractedAt(now.toString())
@@ -119,7 +109,6 @@ public class ContentProcessingService {
                 .pageAuthor(pageAuthor)
                 .title(title)
                 .author(author)
-                .markdownPreview(markdownPreview)
                 .markdown(markdown)
                 .build();
     }

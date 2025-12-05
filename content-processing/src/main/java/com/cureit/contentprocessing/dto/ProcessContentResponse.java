@@ -1,6 +1,6 @@
 package com.cureit.contentprocessing.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+// import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
@@ -16,8 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ProcessContentResponse {
-    private String contentSlug;
-    private List <String> topics;
+    private List<String> topics;
     private String type;
     private String extractedAt;
     private String sourceUrl;
@@ -30,7 +29,5 @@ public class ProcessContentResponse {
 
     // if article or tweet
     private String author;
-    @JsonIgnore
     private String markdown;
-    private String markdownPreview;
 }

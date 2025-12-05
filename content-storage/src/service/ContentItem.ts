@@ -13,17 +13,24 @@ import { AppError, InternalServerError } from "@/utils/error";
 
 async function processContentUrl(
   content_url: string,
+  coordination_id: string,
 ): Promise<ContentProcessingOuptut | InternalServerError> {
   const response = await fetch(
     `${env.CONTENT_PROCESSING_SERVICE_URL}/api/process`,
     {
       method: "POST",
       body: JSON.stringify({ content_url }),
+      headers: {
+        "Content-Type": "application/json",
+        "CureIt-Coordination-Id": coordination_id,
+      },
     },
   );
   logger.info(`Processing content_url=${content_url}`);
   const json = await response.json();
   const parsed = ContentProcessingOutput.safeParse(json);
+
+  console.log(json);
 
   if (parsed.error) {
     logger.error("content-processing service returned invalid json");
@@ -44,7 +51,10 @@ export async function submitContent(
     logger.info(
       `Content (content_url=${content_url}) not found in cache. Proceeding to processing step`,
     );
-    const body = await processContentUrl(content_url);
+    const body = await processContentUrl(
+      content_url,
+      headers["CureIt-Coordination-Id"],
+    );
     if (body instanceof AppError) return body;
 
     content = new ContentItem({ ...body, is_private });

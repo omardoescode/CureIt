@@ -17,14 +17,18 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class ContentProcessingController {
-    private final ContentProcessingService contentProcessingService;
-    @PostMapping("/process")
-    public ResponseEntity<ProcessContentResponse> submitContent(@RequestHeader(value = "CureIt-Coordination-Id", required = false) String coordination,
-                                                                @RequestBody ProcessContentRequest request) throws MissingRequestHeaderException {
-        if (coordination == null) throw new MissingHeaderException("missing CureIt-Coordination-Id header");
+	private final ContentProcessingService contentProcessingService;
 
-        log.info("[{}] /process", coordination);
-        ProcessContentResponse response = contentProcessingService.processContent(request, coordination);
-        return ResponseEntity.ok(response);
-    }
+	@PostMapping("/process")
+	public ResponseEntity<ProcessContentResponse> submitContent(
+			@RequestHeader(value = "CureIt-Coordination-Id", required = false) String coordination,
+			@RequestBody ProcessContentRequest request) throws MissingRequestHeaderException {
+		if (coordination == null)
+			throw new MissingHeaderException("missing CureIt-Coordination-Id header");
+		System.out.println(coordination);
+
+		log.info("[{}] /process", coordination);
+		ProcessContentResponse response = contentProcessingService.processContent(request, coordination);
+		return ResponseEntity.ok(response);
+	}
 }

@@ -11,6 +11,7 @@ import env from "@/utils/env";
 import logger from "@/lib/logger";
 import { logger as logMiddleware } from "hono/logger";
 import { SubmissionBodySchema } from "./validation/content_url";
+import { AppError } from "./utils/error";
 
 // Connect to database
 await mongoose
@@ -34,6 +35,10 @@ app.post(
     const body = c.req.valid("json");
 
     const content_slug = await submitContent(headers, body);
+    if (content_slug instanceof AppError) {
+      logger.error(`Error getting content slug: ${content_slug}`);
+      return c.json({ error: "Internal Server Error" }, 500);
+    }
     return c.json({ content_slug }, 200);
   },
 );

@@ -4,5 +4,10 @@ public enum ContentType {
     ARTICLE,
     VIDEO,
     PAGE,
-    OTHER
+    OTHER;
+
+    @Override
+    public String toString() {
+        return this.name().toLowerCase();
+    }
 }
