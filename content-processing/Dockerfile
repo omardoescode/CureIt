@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
-COPY target/*.jar app.jar
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+COPY target/content-processing-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app/app.jar", "--server.port=${PORT:-4001}"]

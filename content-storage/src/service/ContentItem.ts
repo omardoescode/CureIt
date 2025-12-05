@@ -1,36 +1,65 @@
 import ContentItemSubmission from "@/models/ContentItemSubmission";
-import type { ContentSubmissionBody } from "../validation/content";
 import type { BaseHeaders, BaseProtectedHeaders } from "../validation/headers";
-import ContentItem, { type IContentItem } from "@/models/ContentItem";
+import ContentItem from "@/models/ContentItem";
 import logger from "@/lib/logger";
+import type { IContentItem } from "@/types/ContentItem";
+import type { SubmissionBody } from "@/validation/content_url";
+import env from "@/utils/env";
+import {
+  ContentProcessingOutput,
+  type ContentProcessingOuptut,
+} from "@/validation/content";
+import { AppError, InternalServerError } from "@/utils/error";
+
+async function processContentUrl(
+  content_url: string,
+  coordination_id: string,
+): Promise<ContentProcessingOuptut | InternalServerError> {
+  const response = await fetch(
+    `${env.CONTENT_PROCESSING_SERVICE_URL}/api/process`,
+    {
+      method: "POST",
+      body: JSON.stringify({ content_url }),
+      headers: {
+        "Content-Type": "application/json",
+        "CureIt-Coordination-Id": coordination_id,
+      },
+    },
+  );
+  logger.info(`Processing content_url=${content_url}`);
+  const json = await response.json();
+  const parsed = ContentProcessingOutput.safeParse(json);
+
+  console.log(json);
+
+  if (parsed.error) {
+    logger.error("content-processing service returned invalid json");
+    logger.error(parsed.error.issues);
+    return new InternalServerError();
+  }
+
+  return parsed.data;
+}
 
 export async function submitContent(
   headers: BaseProtectedHeaders,
-  {
-    author,
-    title,
-    extracted_at,
-    is_private,
-    source_url,
-    type,
-    markdown,
-    submitted_at,
-    topics,
-  }: ContentSubmissionBody,
-): Promise<string> {
-  let content = await ContentItem.findOne({ source_url });
+  { submitted_at, topics, content_url, is_private }: SubmissionBody,
+): Promise<string | InternalServerError> {
+  let content = await ContentItem.findOne({ source_url: content_url });
 
   if (!content) {
-    content = new ContentItem({
-      author,
-      title,
-      extracted_at,
-      source_url,
-      type,
-      is_private,
-      markdown,
-    });
+    logger.info(
+      `Content (content_url=${content_url}) not found in cache. Proceeding to processing step`,
+    );
+    const body = await processContentUrl(
+      content_url,
+      headers["CureIt-Coordination-Id"],
+    );
+    if (body instanceof AppError) return body;
+
+    content = new ContentItem({ ...body, is_private });
     await content.save();
+    logger.info(`Added a new content item: content_slug=${content.slug}`);
   }
 
   // Add a submission
@@ -42,7 +71,6 @@ export async function submitContent(
   });
 
   await submission.save();
-  logger.info(`Printing ${content.slug}`);
   return content.slug;
 }
 

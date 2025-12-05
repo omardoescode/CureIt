@@ -1,0 +1,52 @@
+server:
+  port: ${PORT}
+
+spring:
+  application:
+    name: user-service
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${USER_DB_HOST}:${USER_DB_PORT}/${USER_DB_DATABASE_NAME}
+    username: ${USER_DB_USERNAME}
+    password: ${USER_DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+    host: localhost
+    port: 1025
+    username: hager
+    password: root
+    properties:
+      mail.smtp.trust: "*"
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 3000
+      mail.smtp.writetimeout: 5000
+
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
+
+cloudinary:
+  cloud_name: dtbzftsrr
+  api_key: 248871858394443
+  api_secret: pY8vT4IT8-De0qyd560_Ce1FbjQ

@@ -6,6 +6,8 @@ services:
       - NODE_ENV
       - LOG_LEVEL
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
+      - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
+      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT}
       - PORT=${API_GATEWAY_PORT}
     depends_on:
       - content-processing
@@ -14,16 +16,56 @@ services:
     networks:
       - backend-net
 
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    environment:
+      - PORT=${USER_SERVICE_PORT}
+      - USER_DB_DATABASE_NAME
+      - USER_DB_USERNAME
+      - USER_DB_PASSWORD
+      - USER_DB_PORT
+      - USER_DB_HOST=user-db
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_HOST=redis
+      - JWT_SECRET_KEY=${USER_DB_JWT_SECRET_KEY}
+      - JWT_ACCESS_TOKEN_EXPIRATION=${USER_DB_JWT_ACCESS_TOKEN_EXPIRATION}
+      - JWT_REFRESH_TOKEN_EXPIRATION=${USER_DB_JWT_REFRESH_TOKEN_EXPIRATION}
+    ports:
+      - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
+    networks:
+      - backend-net
+    depends_on:
+      - user-db
+      - redis
+      - mail-dev
+
   content-processing:
     build: ./content-processing
-    depends_on:
-      - content-storage
     container_name: content-processing
     environment:
       - PORT=${CONTENT_PROCESSING_PORT}
-      - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
     ports:
       - "${CONTENT_PROCESSING_PORT}:${CONTENT_PROCESSING_PORT}"
+    networks:
+      - backend-net
+
+  curation-service:
+    build: ./curation-service
+    container_name: curation-service
+    environment:
+      - NODE_ENV
+      - LOG_LEVEL
+      - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
+      - REDIS_URL=redis://redis:${REDIS_PORT}
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_CLIENT_ID=curation-service
+      - KAFKA_GROUP_ID=curation-processor-group
+      - KAFKA_INTERACTION_EVENTS_TOPIC_NAME=interaction.events
+      - KAFKA_CURATION_UPDATE_TOPIC_NAME=curation.events
+    depends_on:
+      - redis
+      - kafka
     networks:
       - backend-net
 
@@ -35,8 +77,10 @@ services:
       - LOG_LEVEL
       - PORT=${CONTENT_STORAGE_PORT}
       - MONGO_URL=mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data?authSource=admin
+      - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
     depends_on:
       - content-storage-db
+      - content-processing
     ports:
       - "${CONTENT_STORAGE_PORT}:${CONTENT_STORAGE_PORT}"
     networks:
@@ -54,6 +98,73 @@ services:
       - "${CONTENT_DB_PORT}:${CONTENT_DB_PORT}"
     networks:
       - backend-net
+
+  user-db:
+    image: "postgres:18"
+    ports:
+      - "${USER_DB_PORT}:${USER_DB_PORT}"
+    environment:
+      - POSTGRES_USER=${USER_DB_USERNAME}
+      - POSTGRES_PASSWORD=${USER_DB_PASSWORD}
+      - POSTGRES_DB=${USER_DB_DATABASE_NAME}
+    networks:
+      - backend-net
+    volumes:
+      - ./persistence.local/user-db:/var/lib/postgresql
+
+  mail-dev:
+    container_name: ms-mail-dev-new
+    image: maildev/maildev
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    networks:
+      - backend-net
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.4
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - backend-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.4
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_HOST://localhost:29092,PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    networks:
+      - backend-net
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - ./persistence.local/redis-data:/data
+    networks:
+      - backend-net
+
+volumes:
+  persistence.local:
 
 networks:
   backend-net:

@@ -14,6 +14,7 @@ const validPort = (val: string) => {
 
   return parsed;
 };
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "testing", "produdction"])
@@ -21,6 +22,7 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "error", "warn", "info"]).default("debug"),
   PORT: z.string().transform(validPort),
   MONGO_URL: z.string(),
+  CONTENT_PROCESSING_SERVICE_URL: z.url(),
 });
 
 const env = Object.freeze(envSchema.parse(process.env));
