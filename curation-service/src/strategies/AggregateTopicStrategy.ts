@@ -49,7 +49,9 @@ export default class AggregateTopicStrategy extends CurationStrategy {
       update_payload[t] = w.toString();
     }
 
-    logger.debug(`Updating ${event.content_id} with ${update_payload}`);
+    logger.debug(
+      `Updating ${event.content_id} with ${JSON.stringify(update_payload)}`,
+    );
     await this.redis.hset(hash_key, update_payload);
 
     // Stability check
