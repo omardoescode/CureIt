@@ -7,6 +7,7 @@ services:
       - LOG_LEVEL
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
       - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
+      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT}
       - PORT=${API_GATEWAY_PORT}
     depends_on:
       - content-processing
