@@ -15,8 +15,11 @@ export const FollowingService = {
       topic,
     });
 
-    // TODO: handle duplicates
-    await follow.save();
+    await follow.save().catch((err) => {
+      // if a duplicate error
+      if (err.code == 11000) return;
+      throw err;
+    });
 
     // TODO: Handle updates of the feed
   },
