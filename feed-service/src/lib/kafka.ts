@@ -14,16 +14,16 @@ const kafka = new Kafka({
   },
 });
 
-export const curationConsumer = kafka.consumer({
-  groupId: env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
+const curationConsumer = kafka.consumer({
+  groupId: env.KAFKA_GROUP_ID,
 });
 
-export const interactionConsumer = kafka.consumer({
-  groupId: env.KAFKA_INTERACTION_EVENTS_TOPIC_NAME,
+const interactionConsumer = kafka.consumer({
+  groupId: env.KAFKA_GROUP_ID,
 });
 
 await Promise.all([
-  retry(() => curationConsumer.connect(), 1000, {
+  retry(() => interactionConsumer.connect(), 1000, {
     connectionMsg: "Connected to curation consumer successfully",
     retryMsg: "failed to connect to curation consumer. Retrying after a seocnd",
   }),
@@ -34,27 +34,9 @@ await Promise.all([
   }),
 ]);
 
-interactionConsumer.run({
-  eachMessage: async ({ message }) => {
-    const body = message.value?.toString();
-    if (!body) {
-      logger.warn("Received message with no value");
-      return;
-    }
-
-    logger.info(`Received message: ${body}`);
-    let parsed: InteractionEvent | null;
-    try {
-      const msg = JSON.parse(body);
-      parsed = InteractionEventSchema.parse(msg);
-    } catch (_) {
-      // Must have been a message we don't care aobut
-      // TODO: Later, distinguish between each type of message
-      return;
-    }
-
-    await handleMessage();
-  },
+await interactionConsumer.subscribe({
+  topic: env.KAFKA_INTERACTION_EVENTS_TOPIC_NAME,
+  fromBeginning: true,
 });
 
-export const test = "1";
+export { interactionConsumer, curationConsumer };

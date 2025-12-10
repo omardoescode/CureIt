@@ -4,8 +4,10 @@ import logger from "./lib/logger";
 import { logger as loggerMiddleware } from "hono/logger";
 import mongoose from "mongoose";
 import { interactionConsumer } from "./lib/kafka";
-import { InteractionEventSchema, type InteractionEvent } from "./validation";
+import { CurationUpdateSchmea, InteractionEventSchema } from "./validation";
 import { MessageHandler } from "./service/MessageHandler";
+import type { z } from "zod";
+import type { EachMessagePayload } from "kafkajs";
 
 await mongoose
   .connect(env.MONGO_URL)
@@ -18,8 +20,9 @@ await mongoose
 const app = new Hono().basePath("/api");
 app.use(loggerMiddleware());
 
-interactionConsumer.run({
-  eachMessage: async ({ message }) => {
+const handler =
+  (schema: typeof InteractionEventSchema | typeof CurationUpdateSchmea) =>
+  async ({ message }: EachMessagePayload) => {
     const body = message.value?.toString();
     if (!body) {
       logger.warn("Received message with no value");
@@ -27,10 +30,10 @@ interactionConsumer.run({
     }
 
     logger.info(`Received message: ${body}`);
-    let parsed: InteractionEvent | null;
+    let parsed: z.infer<typeof schema> | null;
     try {
       const msg = JSON.parse(body);
-      parsed = InteractionEventSchema.parse(msg);
+      parsed = schema.parse(msg);
     } catch (_) {
       // Must have been a message we don't care aobut
       // TODO: Later, distinguish between each type of message, this is an architecture task
@@ -38,7 +41,10 @@ interactionConsumer.run({
     }
 
     await MessageHandler.handleMessage(parsed);
-  },
+  };
+
+await interactionConsumer.run({
+  eachMessage: handler(InteractionEventSchema),
 });
 
 export default {
