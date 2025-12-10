@@ -1,10 +1,14 @@
 import type { CurationUpdate, InteractionEvent } from "@/validation";
-import assert from 'assert'
+import assert from "assert";
 import CurationStrategy from "./CurationStrategy";
 
 export default class TopTypeStrategy extends CurationStrategy {
-  get_key(content_id: string) { return `curation:${content_id}:type_scores`; }
-  override async process(event: InteractionEvent): Promise<CurationUpdate | null> {
+  get_key(content_id: string) {
+    return `curation:${content_id}:type_scores`;
+  }
+  override async process(
+    event: InteractionEvent,
+  ): Promise<CurationUpdate | null> {
     assert(event.type === "modify_type");
     const hashkey = this.get_key(event.content_id);
     const hashmap = await this.redis.hgetall(hashkey);
@@ -23,8 +27,9 @@ export default class TopTypeStrategy extends CurationStrategy {
     return {
       content_id: event.content_id,
       reason: `Content type updated to ${event.content_type} with top score ${new_score}.`,
-      type: 'content_type_update',
+      type: "content_type_update",
       new_type: event.content_type,
-    }
+    };
   }
 }
+

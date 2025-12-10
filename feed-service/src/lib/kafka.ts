@@ -1,6 +1,8 @@
 import env from "@/env";
 import { Kafka } from "kafkajs";
 import { retry } from "@/utils/retry";
+import logger from "./logger";
+import { InteractionEventSchema, type InteractionEvent } from "@/validation";
 
 const kafka = new Kafka({
   clientId: env.KAFKA_CLIENT_ID,
@@ -31,5 +33,28 @@ await Promise.all([
       "failed to connect to interaction consumer. Retrying after a seocnd",
   }),
 ]);
+
+interactionConsumer.run({
+  eachMessage: async ({ message }) => {
+    const body = message.value?.toString();
+    if (!body) {
+      logger.warn("Received message with no value");
+      return;
+    }
+
+    logger.info(`Received message: ${body}`);
+    let parsed: InteractionEvent | null;
+    try {
+      const msg = JSON.parse(body);
+      parsed = InteractionEventSchema.parse(msg);
+    } catch (_) {
+      // Must have been a message we don't care aobut
+      // TODO: Later, distinguish between each type of message
+      return;
+    }
+
+    await handleMessage();
+  },
+});
 
 export const test = "1";
