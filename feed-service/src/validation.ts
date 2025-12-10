@@ -12,29 +12,14 @@ const BaseInteractionEvent = z.object({
 
 export const InteractionEventSchema = z.discriminatedUnion("type", [
   BaseInteractionEvent.extend({
-    type: z.literal(InteractionTypeSchema.enum.modify_topic),
-    topic: z
-      .string()
-      .nonempty()
-      .regex(/^(\d+|[a-zA-Z]+|:)$/)
-      .transform((x) => x.toLowerCase()),
-    user_weight: NonZeroNumber,
-    content_id: z.string().nonempty(),
+    type: z.literal("follow_topic"),
+    userId: z.string().nonempty(),
+    topic: z.string().nonempty(),
   }),
   BaseInteractionEvent.extend({
-    type: z.literal(InteractionTypeSchema.enum.vote),
-    user_weight: NonZeroNumber,
-    content_id: z.string().nonempty(),
-  }),
-  BaseInteractionEvent.extend({
-    type: z.literal(InteractionTypeSchema.enum.modify_type),
-    user_weight: NonZeroNumber,
-    content_type: z
-      .string()
-      .nonempty()
-      .regex(/^(\d+|[a-zA-Z]+|:)$/)
-      .transform((x) => x.toLowerCase()),
-    content_id: z.string().nonempty(),
+    type: z.literal("unfollow_topic"),
+    userId: z.string().nonempty(),
+    topic: z.string().nonempty(),
   }),
 ]);
 
@@ -62,3 +47,10 @@ export const CurationUpdateSchmea = z.discriminatedUnion("type", [
 ]);
 
 export type CurationUpdate = z.infer<typeof CurationUpdateSchmea>;
+
+export const ConsumerMessageSchema = z.union([
+  CurationUpdateSchmea,
+  InteractionEventSchema,
+]);
+
+export type ConsumerMessage = z.infer<typeof ConsumerMessageSchema>;
