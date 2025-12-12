@@ -18,6 +18,7 @@ const envSchema = z.object({
   KAFKA_INTERACTION_EVENTS_TOPIC_NAME: z.string().nonempty(),
   KAFKA_CURATION_UPDATE_TOPIC_NAME: z.string().nonempty(),
   MONGO_URL: z.url(),
+  CONTENT_STORAGE_URL: z.url(),
 });
 
 const env = Object.freeze(envSchema.parse(process.env));
