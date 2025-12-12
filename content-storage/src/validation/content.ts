@@ -49,3 +49,6 @@ export type ContentProcessingOuptut = z.infer<typeof ContentProcessingOutput>;
 export const ContentItemSlugSchema = z.object({
   slug: z.string().nonempty(),
 });
+export const ContentItemIdSchema = z.object({
+  id: z.string().nonempty(),
+});

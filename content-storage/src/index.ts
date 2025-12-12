@@ -1,11 +1,18 @@
 import zValidator from "@/utils/zValidator";
 import { Hono } from "hono";
-import { ContentItemSlugSchema } from "./validation/content";
+import {
+  ContentItemIdSchema,
+  ContentItemSlugSchema,
+} from "./validation/content";
 import {
   BaseHeadersSchema,
   BaseProtectedHeadersSchema,
 } from "./validation/headers";
-import { submitContent, getContentItem } from "./service/ContentItem";
+import {
+  submitContent,
+  getContentItemBySlug,
+  getContentItemById,
+} from "./service/ContentItem";
 import mongoose from "mongoose";
 import env from "@/utils/env";
 import logger from "@/lib/logger";
@@ -51,7 +58,22 @@ app.get(
     const headers = c.req.valid("header");
     const { slug } = c.req.valid("param");
 
-    const content = await getContentItem(headers, slug);
+    const content = await getContentItemBySlug(headers, slug);
+    if (!content) return c.json({ error: "not found" }, 404);
+    return c.json(content, 200);
+  },
+);
+
+app.get(
+  "internal/content/metadata/:id",
+  zValidator("header", BaseHeadersSchema),
+  zValidator("param", ContentItemIdSchema),
+  async (c) => {
+    const headers = c.req.valid("header");
+    const { id } = c.req.valid("param");
+
+    const content = await getContentItemById(headers, id);
+    if (!content) return c.json({ error: "not found" }, 404);
     return c.json(content, 200);
   },
 );

@@ -2,7 +2,7 @@ import ContentItemSubmission from "@/models/ContentItemSubmission";
 import type { BaseHeaders, BaseProtectedHeaders } from "../validation/headers";
 import ContentItem from "@/models/ContentItem";
 import logger from "@/lib/logger";
-import type { IContentItem } from "@/types/ContentItem";
+import type { IBaseContentItem, IContentItem } from "@/types/ContentItem";
 import type { SubmissionBody } from "@/validation/content_url";
 import env from "@/utils/env";
 import {
@@ -74,7 +74,7 @@ export async function submitContent(
   return content.slug;
 }
 
-export async function getContentItem(
+export async function getContentItemBySlug(
   headers: BaseHeaders,
   slug: string,
 ): Promise<IContentItem | null> {
@@ -93,4 +93,15 @@ export async function getContentItem(
   });
 
   return sub ? content : null;
+}
+
+export async function getContentItemById(
+  _: BaseHeaders,
+  id: string,
+): Promise<IBaseContentItem | null> {
+  const content = await ContentItem.findById(
+    id,
+    "slug source_url title page_title page_description page_author type extracted_at created_at is_private",
+  );
+  return content ? content : null;
 }

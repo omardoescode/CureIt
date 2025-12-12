@@ -43,7 +43,7 @@ export const contentTypes = [
 
 export type ContentType = (typeof contentTypes)[number];
 
-export interface IContentItem extends Document<ObjectId> {
+export interface IBaseContentItem extends Document<ObjectId> {
   slug: string;
   source_url: string;
   type: ContentType;
@@ -55,3 +55,12 @@ export interface IContentItem extends Document<ObjectId> {
   created_at: Date;
   is_private: boolean;
 }
+
+export type IContentItem = IBaseContentItem &
+  (
+    | ({ type: "article" } & ArticlePayload)
+    | ({ type: "tweet" } & TweetPayload)
+    | ({ type: "course" } & CoursePayload)
+    | ({ type: "video" } & VideoPayload)
+    | ({ type: "book" } & BookPayload)
+  );
