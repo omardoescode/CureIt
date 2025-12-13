@@ -152,6 +152,20 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     networks:
       - backend-net
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - "8080:8080"
+    networks:
+      - backend-net
+    depends_on:
+      - kafka
+      - zookeeper
 
   redis:
     image: redis:latest
@@ -160,6 +174,35 @@ services:
       - "${REDIS_PORT}:6379"
     volumes:
       - ./persistence.local/redis-data:/data
+    networks:
+      - backend-net
+
+  interaction-service:
+    build: ./interaction-service
+    container_name: interaction-service
+    environment:
+      - PORT=${INTERACTION_SERVICE_PORT}
+      - MONGO_URL=mongodb://${INTERACTION_MONGO_DB_USERNAME}:${INTERACTION_MONGO_DB_PASSWORD}@interaction-db:27017/interaction-data?authSource=admin
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_INTERACTION_EVENTS_TOPIC_NAME=interaction.events
+    ports:
+      - "${INTERACTION_SERVICE_PORT}:${INTERACTION_SERVICE_PORT}"
+    depends_on:
+      - interaction-db
+      - kafka
+    networks:
+      - backend-net
+
+  interaction-db:
+    image: mongo:8
+    container_name: interaction-db
+    volumes:
+      - ./persistence.local/interaction-db:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${INTERACTION_DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${INTERACTION_DB_PASSWORD}
+    ports:
+      - "${INTERACTION_DB_PORT}:27017"
     networks:
       - backend-net
 
