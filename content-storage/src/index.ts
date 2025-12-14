@@ -19,15 +19,31 @@ import logger from "@/lib/logger";
 import { logger as logMiddleware } from "hono/logger";
 import { SubmissionBodySchema } from "./validation/content_url";
 import { AppError } from "./utils/error";
+import { contentCreationProducer } from "./lib/kakfa";
 
+const promises = [];
 // Connect to database
-await mongoose
-  .connect(env.MONGO_URL)
-  .then(() => logger.info("Connected to mongoose successfully"))
-  .catch((err) => {
-    console.error("Failed to connect to the database");
-    throw err;
-  });
+promises.push(
+  mongoose
+    .connect(env.MONGO_URL)
+    .then(() => logger.info("Connected to mongoose successfully"))
+    .catch((err) => {
+      console.error("Failed to connect to the database");
+      throw err;
+    }),
+);
+
+// Connect to kafka
+promises.push(
+  contentCreationProducer
+    .connect()
+    .then(() => logger.info("Connected to kafka producer successfully")),
+);
+
+await Promise.all(promises).catch((err) => {
+  logger.error(err);
+  process.exit(1);
+});
 
 const app = new Hono().basePath("/api");
 

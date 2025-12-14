@@ -38,113 +38,110 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
-    private final UserMapper userMapper;
-    private final UserRepository userRepository;
-    private final FileRepository fileRepository;
+  private final UserMapper userMapper;
+  private final UserRepository userRepository;
+  private final FileRepository fileRepository;
 
-    private final JwtService jwtService;
-    private final CloudinaryService cloudinaryService;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager ;
-    private final FileService fileService;
+  private final JwtService jwtService;
+  private final CloudinaryService cloudinaryService;
+  private final PasswordEncoder passwordEncoder;
+  private final AuthenticationManager authenticationManager;
+  private final FileService fileService;
 
-    @Override
-    @Transactional
-    public LoginRegisterResponse registerUser(UserRegisterRequest request , MultipartFile profilePicture) {
-        validateEmailNotUsedBefore(request.email());
-       validateUsernameNotUsedBefore(request.userName());
-        User user = userMapper.toUser(request);
-        user.setRole(UserRole.USER);
-        user.setPassword(passwordEncoder.encode(request.password()));
+  @Override
+  @Transactional
+  public LoginRegisterResponse registerUser(UserRegisterRequest request, MultipartFile profilePicture) {
+    validateEmailNotUsedBefore(request.email());
+    validateUsernameNotUsedBefore(request.userName());
+    User user = userMapper.toUser(request);
+    user.setRole(UserRole.USER);
+    user.setPassword(passwordEncoder.encode(request.password()));
 
-        if (profilePicture != null) {
-            File file = fileService.handleFileUpload(profilePicture, FileType.PROFILE_PICTURE, user);
-            fileRepository.save(file);
-        }
-        userRepository.save(user);
-        return generateLoginRegisterResponse(user);
+    if (profilePicture != null) {
+      File file = fileService.handleFileUpload(profilePicture, FileType.PROFILE_PICTURE, user);
+      fileRepository.save(file);
     }
-    @Override
-    public LoginRegisterResponse authenticate(LoginRequest loginRequest) {
-        var user=validateEmailExists(loginRequest.email());
-        try{
-            authenticationManager.authenticate
-                    (new UsernamePasswordAuthenticationToken(
-                            loginRequest.email(),
-                            loginRequest.password()));
-        } catch (Exception e) {
-            throw new UserNotFoundException("Invalid email or password");
-        }
-        return generateLoginRegisterResponse(user);
+    userRepository.save(user);
+    return generateLoginRegisterResponse(user);
+  }
+
+  @Override
+  public LoginRegisterResponse authenticate(LoginRequest loginRequest) {
+    var user = validateEmailExists(loginRequest.email());
+    try {
+      authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+          loginRequest.email(),
+          loginRequest.password()));
+    } catch (Exception e) {
+      throw new UserNotFoundException("Invalid email or password");
     }
+    return generateLoginRegisterResponse(user);
+  }
 
+  @Override
+  public RefreshTokenResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
 
-    @Override
-    public RefreshTokenResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
+    final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return null;
-        }
-
-        String refreshToken = authHeader.substring(7);
-        String userEmail = jwtService.extractUsername(refreshToken);
-
-        if (userEmail == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return null;
-        }
-
-        User user=validateEmailExists(userEmail);
-
-        if (jwtService.isTokenExpired(refreshToken)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return null;
-        }
-
-        String newAccessToken = jwtService.generateToken(user);
-        RefreshTokenResponse refreshResponse = RefreshTokenResponse.builder().token(newAccessToken).refreshToken(refreshToken).build();
-        try {
-            new ObjectMapper().writeValue(response.getOutputStream(), refreshResponse);
-        } catch (IOException e) {
-            throw new RuntimeException("Error writing response", e);
-        }
-
-        return refreshResponse;
-    }
-    public void validateEmailNotUsedBefore(String email){
-        Optional<User> user = userRepository.findByEmail(email);
-        if (user.isPresent()){
-            throw new DuplicatedEmailException("Email already exists");
-        }
-    }
-    public void validateUsernameNotUsedBefore(String userName){
-        Optional<User> user = userRepository.findByUserName(userName);
-        if (user.isPresent()){
-            throw new DuplicatedUsernameException("Username already exists");
-        }
-    }
-    public User validateEmailExists(String email){
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("Invalid email or password"));
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      return null;
     }
 
+    String refreshToken = authHeader.substring(7);
+    String userEmail = jwtService.extractUsername(refreshToken);
 
-    private LoginRegisterResponse generateLoginRegisterResponse(User user){
-        var jwtToken=jwtService.generateToken(user);
-        var jwtRefreshToken=jwtService.generateRefreshToken(user);
-        return  LoginRegisterResponse.builder()
-                .token(jwtToken)
-                .refreshToken(jwtRefreshToken)
-                .role(user.getRole())
-                .build();
+    if (userEmail == null) {
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      return null;
     }
 
+    User user = validateEmailExists(userEmail);
 
+    if (jwtService.isTokenExpired(refreshToken)) {
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      return null;
+    }
 
+    String newAccessToken = jwtService.generateToken(user);
+    RefreshTokenResponse refreshResponse = RefreshTokenResponse.builder().token(newAccessToken)
+        .refreshToken(refreshToken).build();
+    try {
+      new ObjectMapper().writeValue(response.getOutputStream(), refreshResponse);
+    } catch (IOException e) {
+      throw new RuntimeException("Error writing response", e);
+    }
 
+    return refreshResponse;
+  }
 
+  public void validateEmailNotUsedBefore(String email) {
+    Optional<User> user = userRepository.findByEmail(email);
+    if (user.isPresent()) {
+      throw new DuplicatedEmailException("Email already exists");
+    }
+  }
+
+  public void validateUsernameNotUsedBefore(String userName) {
+    Optional<User> user = userRepository.findByUserName(userName);
+    if (user.isPresent()) {
+      throw new DuplicatedUsernameException("Username already exists");
+    }
+  }
+
+  public User validateEmailExists(String email) {
+    return userRepository.findByEmail(email)
+        .orElseThrow(() -> new UserNotFoundException("Invalid email or password"));
+  }
+
+  private LoginRegisterResponse generateLoginRegisterResponse(User user) {
+    var jwtToken = jwtService.generateToken(user);
+    var jwtRefreshToken = jwtService.generateRefreshToken(user);
+    return LoginRegisterResponse.builder()
+        .token(jwtToken)
+        .refreshToken(jwtRefreshToken)
+        .role(user.getRole())
+        .build();
+  }
 
 }

@@ -8,6 +8,7 @@ export type InteractionType = z.infer<typeof InteractionTypeSchema>;
 
 const BaseInteractionEvent = z.object({
   timestamp: z.coerce.date(),
+  coordinationId: z.string().nonempty(),
 });
 
 export const InteractionEventSchema = z.discriminatedUnion("type", [
@@ -28,9 +29,10 @@ export type InteractionEvent = z.infer<typeof InteractionEventSchema>;
 const BaseCurationUpdateSchema = z.object({
   content_id: z.string().nonempty(),
   reason: z.string().nonempty(),
+  coordinationId: z.string().nonempty(),
 });
 
-export const CurationUpdateSchmea = z.discriminatedUnion("type", [
+export const CurationUpdateEventSchmea = z.discriminatedUnion("type", [
   BaseCurationUpdateSchema.extend({
     type: z.literal("topic_list_updated"),
     topic: z.string().nonempty(),
@@ -46,11 +48,19 @@ export const CurationUpdateSchmea = z.discriminatedUnion("type", [
   }),
 ]);
 
-export type CurationUpdate = z.infer<typeof CurationUpdateSchmea>;
+export type CurationUpdateEvent = z.infer<typeof CurationUpdateEventSchmea>;
+
+export const ContentCreationEventSchema = z.object({
+  type: z.literal("content_added"),
+  coordinationId: z.string().nonempty(),
+  contentId: z.string().nonempty(),
+});
+export type ContentCreationEvent = z.infer<typeof CurationUpdateEventSchmea>;
 
 export const ConsumerMessageSchema = z.union([
-  CurationUpdateSchmea,
+  CurationUpdateEventSchmea,
   InteractionEventSchema,
+  ContentCreationEventSchema,
 ]);
 
 export type ConsumerMessage = z.infer<typeof ConsumerMessageSchema>;

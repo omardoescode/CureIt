@@ -1,13 +1,10 @@
 package com.cureit.contentprocessing.enums;
 
 public enum ContentType {
-    ARTICLE,
-    VIDEO,
-    PAGE,
-    OTHER;
+	ARTICLE, VIDEO, OTHER;
 
-    @Override
-    public String toString() {
-        return this.name().toLowerCase();
-    }
+	@Override
+	public String toString() {
+		return this.name().toLowerCase();
+	}
 }

@@ -3,6 +3,7 @@ import { Hono, type Context } from "hono";
 import { type StatusCode } from "hono/utils/http-status";
 import logger from "@/lib/logger";
 import { decode } from "hono/jwt";
+import type { SafeExtendShape } from "zod";
 
 const v1app = new Hono();
 
@@ -22,115 +23,79 @@ async function getUserId(
   }
 }
 
-const handleEndpoint = async (
-  c: Context,
-  from: string,
-  to: string,
-  method: "POST" | "PUT" | "PATCH",
-  options: {
-    require_auth?: boolean | "optional";
-    additional_body_data?: Record<string, unknown>;
-  } = { require_auth: false, additional_body_data: {} },
-) => {
-  const headers = new Headers(c.req.raw.headers);
-  headers.set("CureIt-Coordination-Id", crypto.randomUUID());
-
-  // Handle authentication
-  if (options.require_auth) {
-    const userId = await getUserId(c.req.header("Authorization"));
-    if (userId) headers.set("CureIt-User-Id", userId);
-    else if (options.require_auth === "optional")
-      headers.set("CureIt-User-Id", "");
-    else {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
-  }
-
-  const request: RequestInit = { method, headers };
-
-  if (["POST", "PUT", "PATCH"].includes(method)) {
-    const contentType = c.req.header("Content-Type") || "";
-
-    if (contentType.startsWith("application/json")) {
-      const body = await c.req.json();
-      request.body = JSON.stringify({
-        ...body,
-        ...options.additional_body_data,
-      });
-    } else if (contentType.startsWith("multipart/form-data")) {
-      const formData = await c.req.formData();
-
-      if (options.additional_body_data) {
-        for (const [key, value] of Object.entries(
-          options.additional_body_data,
-        )) {
-          formData.append(key, String(value));
-        }
-      }
-
-      request.body = formData;
-      headers.delete("Content-Type");
-    } else {
-      request.body = await c.req.text();
-    }
-  }
-
-  logger.info(`Forwarding ${from} request`, {
-    coordinationId: headers.get("CureIt-Coordination-Id"),
-    headers,
-  });
-
+v1app.post("/auth/login", async (c) => {
   try {
-    const res = await fetch(to, request);
+    const body = await c.req.json().catch(() => {});
+
+    const res = await fetch(`${env.USER_SERVICE_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
 
     c.status(res.status as StatusCode);
     res.headers.forEach((value, key) => c.header(key, value));
 
+    const responseBody = await res.arrayBuffer();
+    return c.body(responseBody);
+  } catch (err) {
+    logger.error("Login request failed", { error: err });
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
+v1app.post("/auth/register", async (c) => {
+  try {
+    const formData = await c.req.formData();
+
+    const res = await fetch(`${env.USER_SERVICE_URL}/auth/register`, {
+      method: "POST",
+      body: formData,
+    });
+
+    c.status(res.status as StatusCode);
+    res.headers.forEach((value, key) => c.header(key, value));
     const body = await res.arrayBuffer();
     return c.body(body);
   } catch (err) {
-    logger.error(`Request to ${to} failed`, { error: err });
+    logger.error("Failed to register user", { error: err });
     return c.json({ error: "Internal Server Error" }, 500);
   }
-};
+});
 
-v1app.post("/content/submit", (c) =>
-  handleEndpoint(
-    c,
-    "/content/submit",
-    `${env.CONTENT_STORAGE_SERVICE_URL}/api/submit_content`,
-    "POST",
-    {
-      require_auth: true,
-      additional_body_data: {
-        submitted_at: new Date().toISOString(),
+v1app.post("/content/submit", async (c) => {
+  try {
+    const body = await c.req.json().catch(() => {});
+
+    const userId = await getUserId(c.req.header("Authorization"));
+    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const res = await fetch(
+      `${env.CONTENT_STORAGE_SERVICE_URL}/api/submit_content`,
+      {
+        method: "POST",
+        headers: {
+          "CureIt-Coordination-Id": crypto.randomUUID(),
+          "CureIt-User-Id": userId,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...body,
+          submitted_at: new Date().toISOString(),
+        }),
       },
-    },
-  ),
-);
+    );
 
-v1app.post("/auth/register", (c) =>
-  handleEndpoint(
-    c,
-    "/auth/register",
-    `${env.USER_SERVICE_URL}/auth/register`,
-    "POST",
-    {
-      require_auth: false,
-    },
-  ),
-);
-
-v1app.post("/auth/login", (c) =>
-  handleEndpoint(
-    c,
-    "/auth/login",
-    `${env.USER_SERVICE_URL}/auth/login`,
-    "POST",
-    {
-      require_auth: false,
-    },
-  ),
-);
+    c.status(res.status as StatusCode);
+    res.headers.forEach((value, key) => c.header(key, value));
+    const responseBody = await res.arrayBuffer();
+    return c.body(responseBody);
+  } catch (err) {
+    logger.error("Failed to submit content", { error: err });
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
 
 export default v1app;

@@ -42,6 +42,9 @@ export const ContentProcessingOutput = z.discriminatedUnion("type", [
     duration_seconds: z.number().int().positive().optional(),
     embed_url: z.url().optional(),
   }),
+  ContentProcessingOutputBase.extend({
+    type: z.literal("other"),
+  }),
 ]);
 
 export type ContentProcessingOuptut = z.infer<typeof ContentProcessingOutput>;

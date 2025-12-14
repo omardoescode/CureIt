@@ -4,7 +4,7 @@ import logger from "./lib/logger";
 import { logger as loggerMiddleware } from "hono/logger";
 import mongoose from "mongoose";
 import { interactionConsumer } from "./lib/kafka";
-import { CurationUpdateSchmea, InteractionEventSchema } from "./validation";
+import { CurationUpdateEventSchmea, InteractionEventSchema } from "./validation";
 import { MessageHandler } from "./service/MessageHandler";
 import type { z } from "zod";
 import type { EachMessagePayload } from "kafkajs";
@@ -21,7 +21,7 @@ const app = new Hono().basePath("/api");
 app.use(loggerMiddleware());
 
 const handler =
-  (schema: typeof InteractionEventSchema | typeof CurationUpdateSchmea) =>
+  (schema: typeof InteractionEventSchema | typeof CurationUpdateEventSchmea) =>
   async ({ message }: EachMessagePayload) => {
     const body = message.value?.toString();
     if (!body) {

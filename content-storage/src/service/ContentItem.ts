@@ -9,12 +9,13 @@ import {
   ContentProcessingOutput,
   type ContentProcessingOuptut,
 } from "@/validation/content";
-import { AppError, InternalServerError } from "@/utils/error";
+import { AppError, InternalServerError, InvalidData } from "@/utils/error";
+import { contentCreationProducer } from "@/lib/kakfa";
 
 async function processContentUrl(
   content_url: string,
   coordination_id: string,
-): Promise<ContentProcessingOuptut | InternalServerError> {
+): Promise<ContentProcessingOuptut | InternalServerError | InvalidData> {
   const response = await fetch(
     `${env.CONTENT_PROCESSING_SERVICE_URL}/api/process`,
     {
@@ -26,14 +27,15 @@ async function processContentUrl(
       },
     },
   );
+
+  if (response.status === 400) return new InvalidData("Invaild data");
+
   logger.info(`Processing content_url=${content_url}`);
   const json = await response.json();
   const parsed = ContentProcessingOutput.safeParse(json);
 
-  console.log(json);
-
   if (parsed.error) {
-    logger.error("content-processing service returned invalid json");
+    logger.error(`content-processing service returned invalid json: ${json}`);
     logger.error(parsed.error.issues);
     return new InternalServerError();
   }
@@ -63,14 +65,29 @@ export async function submitContent(
   }
 
   // Add a submission
-  const submission = new ContentItemSubmission({
-    content_id: content._id,
-    user_id: headers["CureIt-User-Id"],
-    submitted_at,
-    topics,
-  });
+  if (topics) {
+    const submission = new ContentItemSubmission({
+      content_id: content._id,
+      user_id: headers["CureIt-User-Id"],
+      submitted_at,
+      topics,
+    });
 
-  await submission.save();
+    await submission.save();
+  }
+
+  await contentCreationProducer.send({
+    topic: env.KAFKA_CONTENT_CREATION_TOPIC_NAME,
+    messages: [
+      {
+        value: JSON.stringify({
+          type: "content_added",
+          coordinationId: headers["CureIt-Coordination-Id"],
+          contentId: content.id,
+        }),
+      },
+    ],
+  });
   return content.slug;
 }
 

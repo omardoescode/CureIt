@@ -140,3 +140,5 @@ export const BookItem = BaseContentItem.discriminator<
     is_free: Boolean,
   }),
 );
+
+export default BaseContentItem;

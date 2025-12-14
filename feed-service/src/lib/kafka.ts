@@ -14,16 +14,16 @@ const kafka = new Kafka({
   },
 });
 
-const curationConsumer = kafka.consumer({
-  groupId: env.KAFKA_GROUP_ID,
+export const curationConsumer = kafka.consumer({
+  groupId: env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
 });
 
-const interactionConsumer = kafka.consumer({
-  groupId: env.KAFKA_GROUP_ID,
+export const interactionConsumer = kafka.consumer({
+  groupId: env.KAFKA_INTERACTION_EVENTS_TOPIC_NAME,
 });
 
 await Promise.all([
-  retry(() => interactionConsumer.connect(), 1000, {
+  retry(() => curationConsumer.connect(), 1000, {
     connectionMsg: "Connected to curation consumer successfully",
     retryMsg: "failed to connect to curation consumer. Retrying after a seocnd",
   }),
@@ -34,9 +34,4 @@ await Promise.all([
   }),
 ]);
 
-await interactionConsumer.subscribe({
-  topic: env.KAFKA_INTERACTION_EVENTS_TOPIC_NAME,
-  fromBeginning: true,
-});
-
-export { interactionConsumer, curationConsumer };
+export const test = "1";

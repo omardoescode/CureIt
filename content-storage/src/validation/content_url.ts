@@ -3,8 +3,8 @@ import z from "zod";
 export const SubmissionBodySchema = z.object({
   content_url: z.url(),
   // topics: z.string(),
-  topics: z.array(z.string()),
-  is_private: z.boolean(),
+  topics: z.array(z.string()).default([]),
+  is_private: z.boolean().default(false),
   submitted_at: z.coerce.date(),
 });
 
