@@ -78,6 +78,9 @@ services:
       - PORT=${CONTENT_STORAGE_PORT}
       - MONGO_URL=mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data?authSource=admin
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
+      - KAFKA_CLIENT_ID=content-creation-client
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_CONTENT_CREATION_TOPIC_NAME=storage.content-added
     depends_on:
       - content-storage-db
       - content-processing

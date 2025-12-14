@@ -70,3 +70,9 @@ export class InternalServerError extends AppError {
     );
   }
 }
+
+export class InvalidData extends AppError {
+  constructor(message: string, reason: string = "you passed invalid data") {
+    super(400, message, "INVALID_DATA", reason);
+  }
+}

@@ -63,4 +63,5 @@ export type IContentItem = IBaseContentItem &
     | ({ type: "course" } & CoursePayload)
     | ({ type: "video" } & VideoPayload)
     | ({ type: "book" } & BookPayload)
+    | { type: "other" }
   );

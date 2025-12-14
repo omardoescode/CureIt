@@ -23,6 +23,13 @@ const envSchema = z.object({
   PORT: z.string().transform(validPort),
   MONGO_URL: z.string(),
   CONTENT_PROCESSING_SERVICE_URL: z.url(),
+  KAFKA_CLIENT_ID: z.string().nonempty(),
+  KAFKA_BROKERS: z
+    .string()
+    .nonempty()
+    .transform((x) => x.split(","))
+    .pipe(z.array(z.string().nonempty()).nonempty()),
+  KAFKA_CONTENT_CREATION_TOPIC_NAME: z.string().nonempty(),
 });
 
 const env = Object.freeze(envSchema.parse(process.env));

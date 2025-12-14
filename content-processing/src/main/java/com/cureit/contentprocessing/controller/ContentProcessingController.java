@@ -25,7 +25,6 @@ public class ContentProcessingController {
 			@RequestBody ProcessContentRequest request) throws MissingRequestHeaderException {
 		if (coordination == null)
 			throw new MissingHeaderException("missing CureIt-Coordination-Id header");
-		System.out.println(coordination);
 
 		log.info("[{}] /process", coordination);
 		ProcessContentResponse response = contentProcessingService.processContent(request, coordination);
