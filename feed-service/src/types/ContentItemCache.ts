@@ -6,8 +6,11 @@ export interface ContentCache {
   page_title: string;
   page_description: string | null;
   page_author: string | null;
-  extracted_at: Date;
-  created_at: Date;
+  extracted_at: string;
+  created_at: string;
+  topics: string[];
+  upvotes: number;
+  downvotes: number;
 
   // NOTE: this is for payload information. The feed service needn't be aware of them, for now that is
   [k: string]: unknown;

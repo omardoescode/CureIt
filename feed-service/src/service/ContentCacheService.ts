@@ -10,7 +10,7 @@ const genContentItemKey = (contentId: string) =>
   `feed:content-cache:${contentId}`;
 
 export const ContentCacheService = {
-  TTL_SECONDS: 60 * 60, // one hour
+  TTL_SECONDS: 24 * 60 * 60, // one hour
   async addContentItem(
     coordinationId: string,
     contentId: string,
@@ -23,12 +23,15 @@ export const ContentCacheService = {
       coordinationId,
       contentId,
     );
-    if (content instanceof NotFoundInStorage) {
-      return false;
-    }
 
-    const redisObj: Record<string, string> = {};
-    Object.entries(content).forEach(([k, v]) => (redisObj[k] = String(v)));
+    if (content instanceof NotFoundInStorage) return false;
+
+    logger.info(content);
+    const redisObj: Record<string, unknown> = {};
+    Object.entries(content).forEach(
+      ([k, v]) => (redisObj[k] = JSON.stringify(v)),
+    );
+    logger.info(JSON.stringify(redisObj));
 
     // Write to Redis
     await redis.hset(key, redisObj);
@@ -42,7 +45,7 @@ export const ContentCacheService = {
     coordinationId: string,
     contentId: string,
     fields: (keyof ContentCache)[],
-  ): Promise<Partial<ContentCache>> {
+  ): Promise<Partial<ContentCache> | NotFoundInStorage> {
     const key = genContentItemKey(contentId);
 
     const updated = await redis.expire(key, this.TTL_SECONDS);
@@ -51,7 +54,10 @@ export const ContentCacheService = {
       logger.info(
         `(Coordination Id=${coordinationId}): Item (contentId=${contentId}) not found in cache. `,
       );
-      this.addContentItem(coordinationId, contentId);
+
+      const added = await this.addContentItem(coordinationId, contentId);
+      if (!added) return new NotFoundInStorage(contentId);
+
       return this.fetchContentItem(coordinationId, contentId, fields);
     }
 
@@ -59,7 +65,8 @@ export const ContentCacheService = {
 
     const result: Partial<ContentCache> = {};
     fields.forEach((field, i) => {
-      if (values[i] !== null) result[field] = values[i];
+      if (values[i] !== null && values[i] !== undefined)
+        result[field] = JSON.parse(values[i]);
     });
 
     return result;

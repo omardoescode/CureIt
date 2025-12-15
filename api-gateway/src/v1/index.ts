@@ -15,6 +15,7 @@ async function getUserId(
   try {
     const payload = decode(token);
     const user_id = payload.payload.userId as string | undefined;
+    logger.info(`UserID: ${user_id}`); // NOTE: for debugging only
     return user_id ?? null;
   } catch (err) {
     logger.warn("Invalid JWT token", { error: err });

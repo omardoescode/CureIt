@@ -11,7 +11,7 @@ import {
 import {
   submitContent,
   getContentItemBySlug,
-  getContentItemById,
+  getContentMetadata,
 } from "./service/ContentItem";
 import mongoose from "mongoose";
 import env from "@/utils/env";
@@ -88,7 +88,7 @@ app.get(
     const headers = c.req.valid("header");
     const { id } = c.req.valid("param");
 
-    const content = await getContentItemById(headers, id);
+    const content = await getContentMetadata(headers, id);
     if (!content) return c.json({ error: "not found" }, 404);
     return c.json(content, 200);
   },

@@ -3,11 +3,11 @@ import env from "./env";
 import logger from "./lib/logger";
 import { logger as loggerMiddleware } from "hono/logger";
 import mongoose from "mongoose";
-import { interactionConsumer } from "./lib/kafka";
-import { CurationUpdateEventSchmea, InteractionEventSchema } from "./validation";
+import { ConsumerMessageSchema } from "./validation";
 import { MessageHandler } from "./service/MessageHandler";
-import type { z } from "zod";
 import type { EachMessagePayload } from "kafkajs";
+import { consumer } from "./lib/kafka";
+import FeedRouter from "./router/FeedRouter";
 
 await mongoose
   .connect(env.MONGO_URL)
@@ -20,9 +20,19 @@ await mongoose
 const app = new Hono().basePath("/api");
 app.use(loggerMiddleware());
 
-const handler =
-  (schema: typeof InteractionEventSchema | typeof CurationUpdateEventSchmea) =>
-  async ({ message }: EachMessagePayload) => {
+app.route("/feed", FeedRouter);
+
+await consumer.subscribe({
+  topics: [
+    env.KAFKA_STORAGE_CONTENT_TOPIC_NAME,
+    env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
+    env.KAFKA_INTERACTION_EVENTS_TOPIC_NAME,
+  ],
+  fromBeginning: true,
+});
+
+await consumer.run({
+  eachMessage: async ({ message }: EachMessagePayload) => {
     const body = message.value?.toString();
     if (!body) {
       logger.warn("Received message with no value");
@@ -30,21 +40,20 @@ const handler =
     }
 
     logger.info(`Received message: ${body}`);
-    let parsed: z.infer<typeof schema> | null;
+    let parsed;
     try {
       const msg = JSON.parse(body);
-      parsed = schema.parse(msg);
+      parsed = ConsumerMessageSchema.parse(msg);
+      logger.warn(`parsed ${msg}`);
     } catch (_) {
       // Must have been a message we don't care aobut
       // TODO: Later, distinguish between each type of message, this is an architecture task
+      logger.warn(`failed to parse ${body}`);
       return;
     }
 
     await MessageHandler.handleMessage(parsed);
-  };
-
-await interactionConsumer.run({
-  eachMessage: handler(InteractionEventSchema),
+  },
 });
 
 export default {

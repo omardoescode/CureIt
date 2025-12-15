@@ -1,15 +1,20 @@
+import logger from "@/lib/logger";
 import { FollowshipModel } from "@/models/Followship";
 
 export const FollowingService = {
   getUserTopics: async (userId: string): Promise<string[]> => {
-    const result = await FollowshipModel.find({ userId });
-    return result.map((r) => r.topic);
+    return FollowshipModel.distinct("topic", { userId });
   },
+
   getTopicFollowerIds: async (topic: string): Promise<string[]> => {
-    const result = await FollowshipModel.find({ topic });
-    return result.map((r) => r.userId);
+    return FollowshipModel.distinct("userId", { topic });
   },
-  follow: async (userId: string, topic: string) => {
+
+  getTopicsFollowerIds: async (topics: string[]): Promise<string[]> => {
+    logger.info("topics", topics);
+    return FollowshipModel.distinct("userId", { topic: { $in: topics } });
+  },
+  follow: async ({ userId, topic }: { userId: string; topic: string }) => {
     const follow = new FollowshipModel({
       userId,
       topic,
@@ -17,13 +22,19 @@ export const FollowingService = {
 
     await follow.save().catch((err) => {
       // if a duplicate error
-      if (err.code == 11000) return;
-      throw err;
+      if (err.code != 11000) throw err;
     });
+    logger.debug("Followship saved");
 
     // TODO: Handle updates of the feed
   },
-  unfollow: async (userId: string, topic: string): Promise<boolean> => {
+  unfollow: async ({
+    userId,
+    topic,
+  }: {
+    userId: string;
+    topic: string;
+  }): Promise<boolean> => {
     const follow = await FollowshipModel.deleteOne({ userId, topic });
     const res = follow.deletedCount > 0;
     // TODO: Handle updates of the feed
