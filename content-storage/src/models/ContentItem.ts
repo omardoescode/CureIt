@@ -31,7 +31,9 @@ export const ContentItemSchema = new mongoose.Schema<IContentItem>(
     type: { type: String, enum: contentTypes },
     extracted_at: { type: Date, required: true },
     created_at: { type: Date, default: Date.now }, // TODO: convert to using timestamps: true
-    is_private: { type: Boolean, default: false },
+    topics: [{ type: String, trim: true, lowercase: true }],
+    upvotes: { type: Number, default: 1 },
+    downvotes: { type: Number, default: 0 },
   },
   { collection: "content_items", discriminatorKey: "type" },
 );

@@ -45,7 +45,7 @@ async function processContentUrl(
 
 export async function submitContent(
   headers: BaseProtectedHeaders,
-  { submitted_at, topics, content_url, is_private }: SubmissionBody,
+  { submitted_at, content_url, is_private, topics }: SubmissionBody,
 ): Promise<string | InternalServerError> {
   let content = await ContentItem.findOne({ source_url: content_url });
 
@@ -59,35 +59,37 @@ export async function submitContent(
     );
     if (body instanceof AppError) return body;
 
-    content = new ContentItem({ ...body, is_private });
+    content = new ContentItem({ ...body, topics });
     await content.save();
     logger.info(`Added a new content item: content_slug=${content.slug}`);
   }
 
   // Add a submission
-  if (topics) {
-    const submission = new ContentItemSubmission({
-      content_id: content._id,
-      user_id: headers["CureIt-User-Id"],
-      submitted_at,
-      topics,
-    });
-
-    await submission.save();
-  }
-
-  await contentCreationProducer.send({
-    topic: env.KAFKA_CONTENT_CREATION_TOPIC_NAME,
-    messages: [
-      {
-        value: JSON.stringify({
-          type: "content_added",
-          coordinationId: headers["CureIt-Coordination-Id"],
-          contentId: content.id,
-        }),
-      },
-    ],
+  const submission = new ContentItemSubmission({
+    content_id: content._id,
+    user_id: headers["CureIt-User-Id"],
+    submitted_at,
+    is_private,
   });
+
+  // TODO: send content only in case it's new only
+  // DEBUGGING FOR NOW
+  await Promise.all([
+    submission.save(),
+    contentCreationProducer.send({
+      topic: env.KAFKA_CONTENT_CREATION_TOPIC_NAME,
+      messages: [
+        {
+          value: JSON.stringify({
+            type: "content_added",
+            coordinationId: headers["CureIt-Coordination-Id"],
+            contentId: content.id,
+          }),
+        },
+      ],
+    }),
+  ]);
+
   return content.slug;
 }
 
@@ -98,27 +100,16 @@ export async function getContentItemBySlug(
   const content = await ContentItem.findOne({ slug });
   if (!content) return null;
 
-  if (!content.is_private) return content;
-
-  // Handle private case
-  const user_id = headers["CureIt-User-Id"];
-  if (!user_id) return null;
-
-  const sub = await ContentItemSubmission.findOne({
-    content_id: content._id,
-    user_id,
-  });
-
-  return sub ? content : null;
+  return content;
 }
 
-export async function getContentItemById(
+export async function getContentMetadata(
   _: BaseHeaders,
   id: string,
 ): Promise<IBaseContentItem | null> {
   const content = await ContentItem.findById(
     id,
-    "slug source_url title page_title page_description page_author type extracted_at created_at is_private",
+    "slug source_url title page_title page_description page_author type extracted_at created_at topics upvotes downvotes",
   );
   return content ? content : null;
 }
