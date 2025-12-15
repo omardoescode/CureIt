@@ -13,11 +13,12 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.7.5",
     "hono": "^4.10.7",
     "ioredis": "^5.8.2",
     "kafkajs": "^2.2.4",
     "mongoose": "^9.0.1",
     "winston": "^3.18.3",
-    "zod": "^4.1.13"
+    "zod": "^4.2.0"
   }
 }

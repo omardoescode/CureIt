@@ -10,7 +10,7 @@ const genContentItemKey = (contentId: string) =>
   `feed:content-cache:${contentId}`;
 
 export const ContentCacheService = {
-  TTL_SECONDS: 24 * 60 * 60, // one hour
+  TTL_SECONDS: 24 * 60 * 60, // one day
   async addContentItem(
     coordinationId: string,
     contentId: string,
@@ -82,5 +82,20 @@ export const ContentCacheService = {
     );
     return !!updated;
   },
-  async update(coordinationId: string, contentId: string): Promise<boolean> {},
+  // NOTE: We might consider this for the curation events
+  // async update(coordinationId: string, contentId: string): Promise<boolean> {},
+
+  async fetchItems(
+    coordinationId: string,
+    contentItemIds: string[],
+    fields: (keyof ContentCache)[],
+  ): Promise<(Partial<ContentCache> | null)[]> {
+    return Promise.all(
+      contentItemIds.map(async (id) => {
+        const r = await this.fetchContentItem(coordinationId, id, fields);
+        if (r instanceof NotFoundInStorage) return null;
+        return r;
+      }),
+    );
+  },
 };

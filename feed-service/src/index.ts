@@ -3,7 +3,7 @@ import env from "./env";
 import logger from "./lib/logger";
 import { logger as loggerMiddleware } from "hono/logger";
 import mongoose from "mongoose";
-import { ConsumerMessageSchema } from "./validation";
+import { ConsumerMessageSchema } from "./validation/ConsumerSchemas.ts";
 import { MessageHandler } from "./service/MessageHandler";
 import type { EachMessagePayload } from "kafkajs";
 import { consumer } from "./lib/kafka";
