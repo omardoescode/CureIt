@@ -35,6 +35,7 @@ async function addToFeed(feedId: string, contentId: string, score: number) {
   await redis.zadd(feedId, score, contentId);
 }
 
+// TODO: Handle trimming feeds? and applying type filters
 async function addToUserFeed({
   userId,
   contentId,
@@ -104,5 +105,77 @@ export const FeedService = {
         );
       }),
     );
+  },
+  async fetchFeed(
+    coordinationId: string,
+    userId: string,
+    feedType: "hot" | "new" | "top",
+    limit: number,
+    cursor: { score: number; contentId: string } | null,
+  ) {
+    const feedId = calcUserFeedKey[feedType](userId);
+
+    let raw: string[] = [];
+    if (!cursor) {
+      raw = await redis.zrevrange(feedId, 0, limit - 1, "WITHSCORES");
+    } else {
+      raw = await redis.zrevrangebyscore(
+        feedId,
+        cursor.score,
+        "-inf",
+        "WITHSCORES",
+        "LIMIT",
+        0,
+        limit + 1,
+      );
+    }
+
+    // Convert flat array [id, score, id, score, ...] to structured array
+    const items: { contentId: string; score: number }[] = [];
+    for (let i = 0; i < raw.length; i += 2) {
+      items.push({ contentId: raw[i]!, score: parseFloat(raw[i + 1]!) });
+    }
+
+    // If cursor was provided, skip the first item if it matches the last cursor
+    let startIndex = 0;
+    if (cursor && items.length > 0) {
+      if (
+        items[0].score === cursor.score &&
+        items[0].contentId === cursor.contentId
+      ) {
+        startIndex = 1;
+      }
+    }
+
+    const pageItems = items.slice(startIndex, startIndex + limit);
+
+    const nextCursor =
+      pageItems.length > 0
+        ? {
+            score: pageItems[pageItems.length - 1]!.score,
+            contentId: pageItems[pageItems.length - 1]!.contentId,
+          }
+        : null;
+
+    const contentItems = await ContentCacheService.fetchItems(
+      coordinationId,
+      pageItems.map((i) => i.contentId),
+      [
+        "slug",
+        "source_url",
+        "type",
+        "title",
+        "page_title",
+        "page_description",
+        "page_author",
+        "extracted_at",
+        "created_at",
+        "topics",
+        "upvotes",
+        "downvotes",
+      ],
+    );
+
+    return { items: contentItems, cursor: nextCursor };
   },
 };
