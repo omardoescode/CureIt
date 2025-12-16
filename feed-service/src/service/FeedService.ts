@@ -10,21 +10,29 @@ import { FeedId } from "./FeedId";
 import { createRanker } from "./FeedRanker";
 import { NotFoundInStorage } from "./ContentStorageClient";
 import logger from "@/lib/logger";
+import type { FeedFilter } from "./FeedSource";
 
 export const FeedService = (coordinationId: string, redis: Redis) => {
   const createFeed = (
     ownerType: "user" | "topic",
     ownerId: string,
     type: FeedType,
+    options?: { filtered?: boolean },
   ) => {
     const feedId = FeedId.new(ownerType, ownerId, type);
 
-    const redisSource = new RedisFeedSource(redis, feedId, 1_000);
-    const mongoSource = new MongoFeedSource(ownerType, ownerId, type);
-    const compositeSource = new CompositeFeedSource(redisSource, mongoSource);
+    let source;
+    if (options?.filtered && ownerType === "topic") {
+      // only Mongo supports filters for now
+      source = new MongoFeedSource(ownerType, ownerId, type);
+    } else {
+      const redisSource = new RedisFeedSource(redis, feedId, 1_000);
+      const mongoSource = new MongoFeedSource(ownerType, ownerId, type);
+      source = new CompositeFeedSource(redisSource, mongoSource);
+    }
 
     const ranker = createRanker(type);
-    return new Feed(feedId, compositeSource, ranker);
+    return new Feed(feedId, source, ranker);
   };
 
   return {
@@ -92,9 +100,11 @@ export const FeedService = (coordinationId: string, redis: Redis) => {
       type: FeedType,
       limit: number,
       cursor: FeedCursor | null,
+      filters?: FeedFilter,
     ) {
-      const topicFeed = createFeed("topic", topic, type);
-      return topicFeed.fetchPage(limit, cursor);
+      const filtered = filters && Object.keys(filters).length > 0;
+      const topicFeed = createFeed("topic", topic, type, { filtered });
+      return topicFeed.fetchPage(limit, cursor, filters);
     },
   };
 };

@@ -13,7 +13,7 @@ await mongoose
   .connect(env.MONGO_URL)
   .then(() => logger.info("Connected to mongoose successfully"))
   .catch((err) => {
-    console.error("Failed to connect to the database");
+    logger.error("Failed to connect to the database");
     throw err;
   });
 

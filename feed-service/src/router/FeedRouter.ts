@@ -2,6 +2,7 @@ import logger from "@/lib/logger";
 import redis from "@/lib/redis";
 import { ContentCacheService } from "@/service/ContentCacheService";
 import { FeedService } from "@/service/FeedService";
+import type { FeedFilter } from "@/service/FeedSource";
 import type { ContentCache } from "@/types/ContentItemCache";
 import { CursorPaginationQuery } from "@/validation/CursorPagination";
 import {
@@ -9,6 +10,7 @@ import {
   BaseProtectedHeadersSchema,
   FeedFieldsQuerySchema,
   FeedTypeSchema,
+  FeedFilterQuerySchema,
   TopicQuerySchema,
 } from "@/validation/RESTSchemas";
 import { zValidator } from "@hono/zod-validator";
@@ -66,16 +68,25 @@ FeedRouter.get(
   zValidator("param", FeedTypeSchema.extend(TopicQuerySchema.shape)),
   zValidator(
     "query",
-    CursorPaginationQuery.extend(FeedFieldsQuerySchema.shape),
+    CursorPaginationQuery.extend(FeedFieldsQuerySchema.shape).extend(
+      FeedFilterQuerySchema.shape,
+    ),
   ),
   async (c) => {
     const headers = c.req.valid("header");
     const coordinationId = headers["CureIt-Coordination-Id"];
 
-    const { limit, cursor, fields } = c.req.valid("query");
+    const { limit, cursor, fields, itemType, createdAfter, createdBefore } =
+      c.req.valid("query");
     const { type: feedType, topic } = c.req.valid("param");
 
-    logger.debug("query: ", JSON.stringify(c.req.valid("query")));
+    const filters: FeedFilter = {};
+    if (itemType) filters.itemType = { eq: itemType };
+    if (createdAfter || createdBefore)
+      filters.createdAt = {
+        gte: createdAfter ? new Date(createdAfter) : undefined,
+        lte: createdBefore ? new Date(createdBefore) : undefined,
+      };
 
     const service = FeedService(coordinationId, redis);
     const { items, nextCursor } = await service.fetchTopicFeed(
@@ -83,6 +94,7 @@ FeedRouter.get(
       feedType,
       limit,
       cursor,
+      filters,
     );
 
     let fieldsToFetch: (keyof ContentCache)[] | "all" = "all";

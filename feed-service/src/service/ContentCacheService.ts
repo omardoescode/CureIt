@@ -27,7 +27,6 @@ export const ContentCacheService = {
 
     if (content instanceof NotFoundInStorage) return false;
 
-    logger.info(content);
     const redisObj: Record<string, unknown> = {};
     Object.entries(content).forEach(
       ([k, v]) => (redisObj[k] = JSON.stringify(v)),
@@ -95,6 +94,7 @@ export const ContentCacheService = {
     );
     return !!updated;
   },
+
   // NOTE: We might consider this for the curation events
   // async update(coordinationId: string, contentId: string): Promise<boolean> {},
 

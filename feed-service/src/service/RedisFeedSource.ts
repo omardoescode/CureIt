@@ -1,8 +1,8 @@
 import type Redis from "ioredis";
-import type { FeedSource } from "./FeedSource";
+import type { FeedFilter, FeedSource } from "./FeedSource";
 import type { FeedCursor } from "@/types/Feed";
 import type { FeedId } from "./FeedId";
-import logger from "@/lib/logger";
+import assert from "assert";
 
 export class RedisFeedSource implements FeedSource {
   constructor(
@@ -19,15 +19,20 @@ export class RedisFeedSource implements FeedSource {
     await pipeline.exec();
   }
 
+  /**
+   * @requires Redis doesn't support filtering. Use another source for this
+   */
   async fetchPage(
     limit: number,
     cursor: FeedCursor | null,
+    filters?: FeedFilter,
   ): Promise<{ items: FeedCursor[]; nextCursor: FeedCursor | null }> {
+    assert(limit > 0, "limit must be greater than 0");
+    assert(!filters);
     const id = this.key.value();
     let raw: string[];
     if (!cursor) {
       raw = await this.redis.zrevrange(id, 0, limit - 1, "WITHSCORES");
-      logger.debug(id, 0, limit - 1, "WITHSCORES");
     } else {
       const maxScore = `(${cursor.score}`;
       raw = await this.redis.zrevrangebyscore(

@@ -10,7 +10,9 @@ export interface FeedItem extends Document<ObjectId> {
   ownerId: string;
 
   feedType: FeedType;
-  contentId: string;
   score: number;
+
+  contentId: string;
   createdAt: Date;
+  itemType: string;
 }

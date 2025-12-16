@@ -1,8 +1,33 @@
 import type { FeedCursor, FeedOwnerType, FeedType } from "@/types/Feed";
-import type { FeedSource } from "./FeedSource";
+import type { FeedFilter, FeedSource } from "./FeedSource";
 import { FeedItemModel } from "@/models/FeedItem";
 import logger from "@/lib/logger";
+import assert from "assert";
+import z from "zod";
 
+const FeedMetaSchema = z
+  .object({
+    itemType: z.string(),
+    createdAt: z.date(),
+  })
+  .strict();
+
+const FeedFilterSchema = z
+  .object({
+    itemType: z.object({ eq: z.string() }).optional(),
+    createdAt: z
+      .object({
+        gte: z.date().optional(),
+        lte: z.date().optional(),
+      })
+      .optional(),
+  })
+  .strict();
+
+/**
+ * @requires This source stores the item type, and creation date in addition to the normal feed data
+ * @note you can filter by both item type (equality) and the creation date
+ */
 export class MongoFeedSource implements FeedSource {
   constructor(
     private ownerType: FeedOwnerType,
@@ -10,7 +35,14 @@ export class MongoFeedSource implements FeedSource {
     private feedType: FeedType,
   ) {}
 
-  async add(contentId: string, score: number) {
+  async add(
+    contentId: string,
+    score: number,
+    meta?: Record<string, string | number | boolean | Date>,
+  ) {
+    const parsed = FeedMetaSchema.safeParse(meta);
+    assert(!parsed.error, "Invalid meta");
+
     await FeedItemModel.updateOne(
       {
         ownerType: this.ownerType,
@@ -25,7 +57,8 @@ export class MongoFeedSource implements FeedSource {
           feedType: this.feedType,
           contentId,
           score,
-          createdAt: new Date(),
+          createdAt: parsed.data.createdAt,
+          itemType: parsed.data.itemType,
         },
       },
       { upsert: true },
@@ -36,12 +69,31 @@ export class MongoFeedSource implements FeedSource {
   async fetchPage(
     limit: number,
     cursor: FeedCursor | null,
+    filters?: FeedFilter,
   ): Promise<{ items: FeedCursor[]; nextCursor: FeedCursor | null }> {
+    assert(limit > 0, "limit must be greater than 0");
+
     const query: any = {
       ownerType: this.ownerType,
       ownerId: this.ownerId,
       feedType: this.feedType,
     };
+
+    if (filters) {
+      const parsedFilters = FeedFilterSchema.safeParse(filters);
+      assert(!parsedFilters.error);
+      const { itemType, createdAt } = parsedFilters.data;
+
+      if (itemType) {
+        query.itemType = itemType.eq;
+      }
+
+      if (createdAt) {
+        query.createdAt = {};
+        if (createdAt.gte) query.createdAt.$gte = createdAt.gte;
+        if (createdAt.lte) query.createdAt.$lte = createdAt.lte;
+      }
+    }
 
     if (cursor) {
       query.$or = [

@@ -1,5 +1,5 @@
 import type { FeedCursor } from "@/types/Feed";
-import type { FeedSource } from "./FeedSource";
+import type { FeedFilter, FeedSource } from "./FeedSource";
 import logger from "@/lib/logger";
 
 export class CompositeFeedSource implements FeedSource {
@@ -8,16 +8,21 @@ export class CompositeFeedSource implements FeedSource {
     private archive: FeedSource,
   ) {}
 
-  async add(contentId: string, score: number) {
-    await this.archive.add(contentId, score);
-    await this.cache.add(contentId, score);
+  async add(
+    contentId: string,
+    score: number,
+    meta: Record<string, string | number | Date | boolean>,
+  ) {
+    await this.archive.add(contentId, score, meta);
+    await this.cache.add(contentId, score, meta);
   }
 
   async fetchPage(
     limit: number,
     cursor: FeedCursor | null,
+    filters: FeedFilter,
   ): Promise<{ items: FeedCursor[]; nextCursor: FeedCursor | null }> {
-    const cacheResult = await this.cache.fetchPage(limit, cursor);
+    const cacheResult = await this.cache.fetchPage(limit, cursor, filters);
     logger.debug("Caching Result: ", JSON.stringify(cacheResult));
 
     if (cacheResult.items.length === limit) {
@@ -30,6 +35,7 @@ export class CompositeFeedSource implements FeedSource {
     const archiveResult = await this.archive.fetchPage(
       remaining,
       continuationCursor,
+      filters,
     );
     logger.debug("Archive Result: ", JSON.stringify(cacheResult));
 
