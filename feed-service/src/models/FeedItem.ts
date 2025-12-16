@@ -32,6 +32,7 @@ const FeedItemSchema = new mongoose.Schema<FeedItem>(
       required: true,
       index: true,
     },
+    itemType: { type: String, required: true },
   },
   {
     versionKey: false,

@@ -19,3 +19,9 @@ export const FeedFieldsQuerySchema = z.object({
 export const TopicQuerySchema = z.object({
   topic: z.string().nonempty(),
 });
+
+export const FeedFilterQuerySchema = z.object({
+  itemType: z.string().optional(),
+  createdAfter: z.iso.date().optional(),
+  createdBefore: z.iso.date().optional(),
+});

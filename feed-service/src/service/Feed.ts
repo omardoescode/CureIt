@@ -1,7 +1,8 @@
 import type { FeedCursor } from "@/types/Feed";
-import type { FeedSource } from "./FeedSource";
+import type { FeedFilter, FeedSource } from "./FeedSource";
 import { FeedId } from "./FeedId";
 import type { FeedRanker } from "./FeedRanker";
+import assert from "assert";
 
 export class Feed {
   constructor(
@@ -13,15 +14,18 @@ export class Feed {
   async addItem(
     contentId: string,
     data: { upvotes: number; downvotes: number; createdAt: Date },
+    meta?: Record<string, string | number | boolean | Date>,
   ) {
     const score = this.ranker.score(data);
-    await this.feedSource.add(contentId, score);
+    await this.feedSource.add(contentId, score, meta);
   }
 
   async fetchPage(
     limit: number,
     cursor: FeedCursor | null,
+    filters?: FeedFilter,
   ): Promise<{ items: FeedCursor[]; nextCursor: FeedCursor | null }> {
-    return this.feedSource.fetchPage(limit, cursor);
+    assert(limit > 0);
+    return this.feedSource.fetchPage(limit, cursor, filters);
   }
 }

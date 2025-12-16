@@ -1,7 +1,7 @@
 import z from "zod";
 
 export const CursorPaginationQuery = z.object({
-  limit: z.string().transform((v) => parseInt(v)),
+  limit: z.coerce.number().int().positive().default(20),
   cursor: z
     .string()
     .nullable()
