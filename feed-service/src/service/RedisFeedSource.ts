@@ -2,15 +2,14 @@ import type Redis from "ioredis";
 import type { FeedSource } from "./FeedSource";
 import type { FeedCursor } from "@/types/Feed";
 import type { FeedId } from "./FeedId";
+import logger from "@/lib/logger";
 
 export class RedisFeedSource implements FeedSource {
   constructor(
     private redis: Redis,
     private key: FeedId,
     private feedLimit: number | null,
-  ) {
-    this.key = key;
-  }
+  ) {}
 
   async add(contentId: string, score: number) {
     const id = this.key.value();
@@ -25,19 +24,20 @@ export class RedisFeedSource implements FeedSource {
     cursor: FeedCursor | null,
   ): Promise<{ items: FeedCursor[]; nextCursor: FeedCursor | null }> {
     const id = this.key.value();
-
     let raw: string[];
     if (!cursor) {
       raw = await this.redis.zrevrange(id, 0, limit - 1, "WITHSCORES");
+      logger.debug(id, 0, limit - 1, "WITHSCORES");
     } else {
+      const maxScore = `(${cursor.score}`;
       raw = await this.redis.zrevrangebyscore(
         id,
-        cursor.score,
+        maxScore,
         "-inf",
         "WITHSCORES",
         "LIMIT",
         0,
-        limit + 1,
+        limit,
       );
     }
 
@@ -47,14 +47,6 @@ export class RedisFeedSource implements FeedSource {
         contentId: raw[i]!,
         score: parseFloat(raw[i + 1]!),
       });
-    }
-
-    if (
-      cursor &&
-      items[0]?.contentId === cursor.contentId &&
-      items[0]?.score === cursor.score
-    ) {
-      items.shift();
     }
 
     const page = items.slice(0, limit);

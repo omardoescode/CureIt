@@ -26,6 +26,12 @@ const FeedItemSchema = new mongoose.Schema<FeedItem>(
       type: Date,
       required: true,
     },
+    feedType: {
+      type: String,
+      enum: ["new", "hot", "top"],
+      required: true,
+      index: true,
+    },
   },
   {
     versionKey: false,

@@ -8,8 +8,10 @@ import type Redis from "ioredis";
 import type { FeedCursor, FeedType } from "@/types/Feed";
 import { FeedId } from "./FeedId";
 import { createRanker } from "./FeedRanker";
+import { NotFoundInStorage } from "./ContentStorageClient";
+import logger from "@/lib/logger";
 
-export const FeedService = (redis: Redis) => {
+export const FeedService = (coordinationId: string, redis: Redis) => {
   const createFeed = (
     ownerType: "user" | "topic",
     ownerId: string,
@@ -32,11 +34,15 @@ export const FeedService = (redis: Redis) => {
         contentId,
         ["topics", "upvotes", "downvotes", "created_at"],
       );
-      if (!cache || cache instanceof Error) return;
+      if (cache instanceof NotFoundInStorage) return;
 
       const { topics, upvotes, downvotes, created_at } = cache;
-      if (!topics || upvotes == null || downvotes == null || !created_at)
+      if (!topics || upvotes == null || downvotes == null || !created_at) {
+        logger.warn(
+          `Invalid path: (!topics || upvotes == null || downvotes == null || !created_at) ${JSON.stringify({ topics, upvotes, downvotes, created_at })}`,
+        );
         return;
+      }
 
       const users = await FollowingService.getTopicsFollowerIds(topics);
 

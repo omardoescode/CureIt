@@ -35,7 +35,11 @@ async function processContentUrl(
   const parsed = ContentProcessingOutput.safeParse(json);
 
   if (parsed.error) {
-    logger.error(`content-processing service returned invalid json: ${json}`);
+    const sample = { ...json };
+    delete sample["markdown"];
+    logger.debug(
+      `content-processing service returned invalid json: ${JSON.stringify(sample)}`,
+    );
     logger.error(parsed.error.issues);
     return new InternalServerError();
   }

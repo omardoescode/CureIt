@@ -5,10 +5,13 @@ export const BaseHeadersSchema = z
     "CureIt-Coordination-Id": z.string().nonempty(),
   })
   .loose();
-export type BaseHeaders = z.infer<typeof BaseHeadersSchema>;
 
 export const BaseProtectedHeadersSchema = BaseHeadersSchema.extend({
   "CureIt-User-Id": z.string().nonempty(),
 });
 
-export type BaseProtectedHeaders = z.infer<typeof BaseProtectedHeadersSchema>;
+export const FeedTypeSchema = z.object({ type: z.enum(["new", "top", "hot"]) });
+
+export const FeedFieldsQuerySchema = z.object({
+  fields: z.string().optional(),
+});
