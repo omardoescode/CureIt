@@ -22,39 +22,46 @@ app.use(loggerMiddleware());
 
 app.route("/feed", FeedRouter);
 
-await consumer.subscribe({
-  topics: [
-    env.KAFKA_STORAGE_CONTENT_TOPIC_NAME,
-    env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
-    env.KAFKA_INTERACTION_EVENTS_TOPIC_NAME,
-  ],
-  fromBeginning: true,
-});
+const topics = [
+  env.KAFKA_STORAGE_CONTENT_TOPIC_NAME,
+  env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
+  env.KAFKA_INTERACTION_EVENTS_TOPIC_NAME,
+];
+await consumer
+  .subscribe({
+    topics,
+    fromBeginning: true,
+  })
+  .then(() =>
+    logger.info(`Successfully subscribed to Kafka topics: ${topics}`),
+  );
 
-await consumer.run({
-  eachMessage: async ({ message }: EachMessagePayload) => {
-    const body = message.value?.toString();
-    if (!body) {
-      logger.warn("Received message with no value");
-      return;
-    }
+consumer
+  .run({
+    eachMessage: async ({ message }: EachMessagePayload) => {
+      const body = message.value?.toString();
+      if (!body) {
+        logger.warn("Received message with no value");
+        return;
+      }
 
-    logger.info(`Received message: ${body}`);
-    let parsed;
-    try {
-      const msg = JSON.parse(body);
-      parsed = ConsumerMessageSchema.parse(msg);
-      logger.warn(`parsed ${msg}`);
-    } catch (_) {
-      // Must have been a message we don't care aobut
-      // TODO: Later, distinguish between each type of message, this is an architecture task
-      logger.warn(`failed to parse ${body}`);
-      return;
-    }
+      logger.info(`Received message: ${body}`);
+      let parsed;
+      try {
+        const msg = JSON.parse(body);
+        parsed = ConsumerMessageSchema.parse(msg);
+        logger.warn(`parsed ${msg}`);
+      } catch (_) {
+        // Must have been a message we don't care aobut
+        // TODO: Later, distinguish between each type of message, this is an architecture task
+        logger.warn(`failed to parse ${body}`);
+        return;
+      }
 
-    await MessageHandler.handleMessage(parsed);
-  },
-});
+      await MessageHandler.handleMessage(parsed);
+    },
+  })
+  .then(() => logger.info("done"));
 
 export default {
   fetch: app.fetch,

@@ -15,15 +15,12 @@ export const FollowingService = {
     return FollowshipModel.distinct("userId", { topic: { $in: topics } });
   },
   follow: async ({ userId, topic }: { userId: string; topic: string }) => {
-    const follow = new FollowshipModel({
-      userId,
-      topic,
-    });
+    await FollowshipModel.updateOne(
+      { userId, topic },
+      { $setOnInsert: { userId, topic } },
+      { upsert: true },
+    );
 
-    await follow.save().catch((err) => {
-      // if a duplicate error
-      if (err.code != 11000) throw err;
-    });
     logger.debug("Followship saved");
 
     // TODO: Handle updates of the feed
