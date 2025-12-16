@@ -5,6 +5,7 @@ import {
   NotFoundInStorage,
 } from "./ContentStorageClient";
 import logger from "@/lib/logger";
+import assert from "assert";
 
 const genContentItemKey = (contentId: string) =>
   `feed:content-cache:${contentId}`;
@@ -41,32 +42,44 @@ export const ContentCacheService = {
 
     return true;
   },
+  /**
+   * @requires fields = 'all' or fields.length > 0
+   */
   async fetchContentItem(
     coordinationId: string,
     contentId: string,
-    fields: (keyof ContentCache)[],
+    fields: (keyof ContentCache)[] | "all",
   ): Promise<Partial<ContentCache> | NotFoundInStorage> {
+    assert(fields === "all" || fields.length != 0, "Invalid feilds count: 0");
     const key = genContentItemKey(contentId);
-
     const updated = await redis.expire(key, this.TTL_SECONDS);
 
     if (!updated) {
-      logger.info(
-        `(Coordination Id=${coordinationId}): Item (contentId=${contentId}) not found in cache. `,
-      );
-
       const added = await this.addContentItem(coordinationId, contentId);
       if (!added) return new NotFoundInStorage(contentId);
-
-      return this.fetchContentItem(coordinationId, contentId, fields);
     }
 
-    const values = await redis.hmget(key, ...(fields as string[]));
+    let values: Record<string, string> | (string | null)[];
+    let fieldNames: string[];
+
+    if (fields === "all") {
+      values = await redis.hgetall(key);
+      fieldNames = Object.keys(values);
+    } else {
+      values = await redis.hmget(key, ...(fields as string[]));
+      fieldNames = fields as string[];
+    }
 
     const result: Partial<ContentCache> = {};
-    fields.forEach((field, i) => {
-      if (values[i] !== null && values[i] !== undefined)
-        result[field] = JSON.parse(values[i]);
+    fieldNames.forEach((field, i) => {
+      if (field === "_id") return;
+      const value =
+        fields === "all"
+          ? (values as Record<string, string>)[field]
+          : (values as (string | null)[])[i];
+
+      if (value != null)
+        result[field as keyof ContentCache] = JSON.parse(value);
     });
 
     return result;
@@ -88,7 +101,7 @@ export const ContentCacheService = {
   async fetchItems(
     coordinationId: string,
     contentItemIds: string[],
-    fields: (keyof ContentCache)[],
+    fields: (keyof ContentCache)[] | "all",
   ): Promise<(Partial<ContentCache> | null)[]> {
     return Promise.all(
       contentItemIds.map(async (id) => {

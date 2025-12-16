@@ -1,7 +1,8 @@
-import type { ConsumerMessage } from "@/validation";
+import type { ConsumerMessage } from "@/validation/ConsumerSchemas";
 import { FollowingService } from "./FollowingService";
 import { ContentCacheService } from "./ContentCacheService";
 import { FeedService } from "./FeedService";
+import redis from "@/lib/redis";
 
 export const MessageHandler = {
   handleMessage: async (message: ConsumerMessage) => {
@@ -28,7 +29,8 @@ export const MessageHandler = {
         );
         break;
       case "content_added":
-        await FeedService.addItemToFeeds(
+        const service = FeedService(message.coordinationId, redis);
+        await service.addContentToFeeds(
           message.coordinationId,
           message.contentId,
         );

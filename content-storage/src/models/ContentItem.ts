@@ -63,8 +63,7 @@ export const ArticleItem = BaseContentItem.discriminator<
 >(
   "article",
   new mongoose.Schema<ArticlePayload>({
-    title: { type: String, required: true, trim: true },
-    author: { type: String, required: true, trim: true },
+    author: { type: String, trim: true },
     markdown: String,
     profile_pic: String,
   }),

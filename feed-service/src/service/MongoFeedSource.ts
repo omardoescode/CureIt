@@ -1,6 +1,7 @@
 import type { FeedCursor, FeedOwnerType, FeedType } from "@/types/Feed";
 import type { FeedSource } from "./FeedSource";
 import { FeedItemModel } from "@/models/FeedItem";
+import logger from "@/lib/logger";
 
 export class MongoFeedSource implements FeedSource {
   constructor(
@@ -29,6 +30,7 @@ export class MongoFeedSource implements FeedSource {
       },
       { upsert: true },
     );
+    logger.debug("this method has been called");
   }
 
   async fetchPage(
