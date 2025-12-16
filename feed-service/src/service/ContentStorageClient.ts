@@ -18,7 +18,7 @@ export const ContentStorageClient = {
     };
 
     const res = await fetch(
-      `${env.CONTENT_STORAGE_URL}/api/internal/content/metadata/${contentId}`,
+      `${env.CONTENT_STORAGE_SERVICE_URL}/api/internal/content/metadata/${contentId}`,
       {
         headers,
       },
