@@ -4,7 +4,7 @@ import logger from "./lib/logger";
 import { logger as loggerMiddleware } from "hono/logger";
 import mongoose from "mongoose";
 import { ConsumerMessageSchema } from "./validation/ConsumerSchemas.ts";
-import { MessageHandler } from "./service/MessageHandler";
+import { Controller } from "./service/MessageHandler";
 import type { EachMessagePayload } from "kafkajs";
 import { consumer } from "./lib/kafka";
 import FeedRouter from "./router/FeedRouter";
@@ -58,7 +58,7 @@ consumer
         return;
       }
 
-      await MessageHandler.handleMessage(parsed);
+      await Controller.handleMessage(parsed);
     },
   })
   .then(() => logger.info("done"));

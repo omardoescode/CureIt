@@ -95,8 +95,41 @@ export const ContentCacheService = {
     return !!updated;
   },
 
-  // NOTE: We might consider this for the curation events
-  // async update(coordinationId: string, contentId: string): Promise<boolean> {},
+  async updateIfExists(
+    coordinationId: string,
+    contentId: string,
+    data: Partial<ContentCache>,
+  ): Promise<boolean> {
+    const key = genContentItemKey(contentId);
+
+    const exists = await redis.expire(key, this.TTL_SECONDS);
+    if (!exists) {
+      logger.info(
+        `(Coordination Id=${coordinationId}): Content Item (contentId=${contentId}) not found for update`,
+      );
+      return false;
+    }
+
+    const redisObj: Record<string, string> = {};
+    Object.entries(data).forEach(([k, v]) => {
+      if (v !== undefined) redisObj[k] = JSON.stringify(v);
+    });
+
+    if (Object.keys(redisObj).length === 0) {
+      logger.info(
+        `(Coordination Id=${coordinationId}): No valid fields to update for contentId=${contentId}`,
+      );
+      return false;
+    }
+
+    await redis.hset(key, redisObj);
+
+    logger.info(
+      `(Coordination Id=${coordinationId}): Content Item (contentId=${contentId}) updated successfully`,
+    );
+
+    return true;
+  },
 
   async fetchItems(
     coordinationId: string,

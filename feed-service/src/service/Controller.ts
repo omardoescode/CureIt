@@ -1,10 +1,10 @@
 import type { ConsumerMessage } from "@/validation/ConsumerSchemas";
 import { FollowingService } from "./FollowingService";
-import { ContentCacheService } from "./ContentCacheService";
 import { FeedService } from "./FeedService";
 import redis from "@/lib/redis";
+import { ContentCacheService } from "./ContentCacheService";
 
-export const MessageHandler = {
+export const Controller = {
   handleMessage: async (message: ConsumerMessage) => {
     switch (message.type) {
       case "follow_topic":
@@ -19,21 +19,27 @@ export const MessageHandler = {
           userId: message.userId,
         });
         break;
-      // TODO: Consider which to update, and which to invalidate
-      case "content_type_update":
-      case "topic_list_updated":
-      case "item_vote_update":
-        await ContentCacheService.invalidate(
-          message.coordinationId,
-          message.content_id,
-        );
-        break;
       case "content_added":
         const service = FeedService(message.coordinationId, redis);
         await service.addContentToFeeds(
           message.coordinationId,
           message.contentId,
         );
+        break;
+      case "content_updated":
+        const { topics, upvotes, downvotes, type, invalidateCache } = message;
+
+        if (invalidateCache)
+          await ContentCacheService.invalidate(
+            message.coordinationId,
+            message.contentId,
+          );
+        else
+          await ContentCacheService.updateIfExists(
+            message.coordinationId,
+            message.contentId,
+            { topics, upvotes, downvotes, type },
+          );
         break;
       default:
         throw new Error("Unimplemented");
