@@ -15,3 +15,7 @@ export const FeedTypeSchema = z.object({ type: z.enum(["new", "top", "hot"]) });
 export const FeedFieldsQuerySchema = z.object({
   fields: z.string().optional(),
 });
+
+export const TopicQuerySchema = z.object({
+  topic: z.string().nonempty(),
+});
