@@ -4,7 +4,7 @@ import logger from "./lib/logger";
 import { logger as loggerMiddleware } from "hono/logger";
 import mongoose from "mongoose";
 import { ConsumerMessageSchema } from "./validation/ConsumerSchemas.ts";
-import { Controller } from "./service/MessageHandler";
+import { Controller } from "./service/Controller.ts";
 import type { EachMessagePayload } from "kafkajs";
 import { consumer } from "./lib/kafka";
 import FeedRouter from "./router/FeedRouter";
@@ -24,7 +24,7 @@ app.route("/feed", FeedRouter);
 
 const topics = [
   env.KAFKA_STORAGE_CONTENT_TOPIC_NAME,
-  env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
+  env.KAFKA_CONTENT_UPDATE_TOPIC_NAME,
   env.KAFKA_INTERACTION_EVENTS_TOPIC_NAME,
 ];
 await consumer

@@ -76,29 +76,56 @@ services:
       - NODE_ENV
       - LOG_LEVEL
       - PORT=${CONTENT_STORAGE_PORT}
-      - MONGO_URL=mongodb://${CONTENT_DB_USERNAME}:${CONTENT_DB_PASSWORD}@content-storage-db:27017/content-data?authSource=admin
+      - MONGO_URL=mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@mongo-db:27017/content-data?authSource=admin
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
       - KAFKA_CLIENT_ID=content-creation-client
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CONTENT_CREATION_TOPIC_NAME=storage.content-added
     depends_on:
-      - content-storage-db
+      - mongo-db
       - content-processing
+      - kafka
     ports:
       - "${CONTENT_STORAGE_PORT}:${CONTENT_STORAGE_PORT}"
     networks:
       - backend-net
 
-  content-storage-db:
-    image: mongo:8
-    container_name: content-storage-db
-    volumes:
-      - ./persistence.local/content-storage-db:/data/db
+  feed-service:
+    build: ./feed-service/
+    container_name: feed-service
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${CONTENT_DB_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${CONTENT_DB_PASSWORD}
+      - NODE_ENV
+      - LOG_LEVEL
+      - PORT=${FEED_SERVICE_PORT}
+      - MONGO_URL=mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@mongo-db:27017/feed-data?authSource=admin
+      - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
+      - KAFKA_CLIENT_ID=feed-service-client
+      - KAFKA_GROUP_ID=feed-service-client
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_CONTENT_CREATION_TOPIC_NAME=storage.content-added
+      - KAFKA_INTERACTION_EVENTS_TOPIC_NAME=interaction.events
+      - KAFKA_CONTENT_UPDATE_TOPIC_NAME=storage.content-updated
+      - REDIS_URL=redis://redis:${REDIS_PORT}
+    depends_on:
+      - mongo-db
+      - content-storage
+      - kafka
+      - redis
     ports:
-      - "${CONTENT_DB_PORT}:${CONTENT_DB_PORT}"
+      - "${FEED_SERVICE_PORT}:${FEED_SERVICE_PORT}"
+    networks:
+      - backend-net
+
+  mongo-db:
+    image: mongo:8
+    container_name: mongo-db
+    volumes:
+      - ./persistence.local/mongo-db:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_PASSWORD}
+    ports:
+      - "${MONGO_DB_PORT}:27017"
     networks:
       - backend-net
 
