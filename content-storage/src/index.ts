@@ -19,7 +19,8 @@ import logger from "@/lib/logger";
 import { logger as logMiddleware } from "hono/logger";
 import { SubmissionBodySchema } from "./validation/content_url";
 import { AppError } from "./utils/error";
-import { contentCreationProducer } from "./lib/kakfa";
+import { consumer, producer } from "./lib/kakfa";
+import ContentRouter from "./router/ContentRouter";
 
 const promises = [];
 // Connect to database
@@ -35,9 +36,19 @@ promises.push(
 
 // Connect to kafka
 promises.push(
-  contentCreationProducer
+  producer
     .connect()
     .then(() => logger.info("Connected to kafka producer successfully")),
+  consumer
+    .connect()
+    .then(() =>
+      consumer.subscribe({
+        topics: [env.KAFKA_CURATION_UPDATE_TOPIC_NAME],
+      }),
+    )
+    .then(() =>
+      logger.info("Connected to kafka consumer, and subscribed successfully"),
+    ),
 );
 
 await Promise.all(promises).catch((err) => {
@@ -49,50 +60,7 @@ const app = new Hono().basePath("/api");
 
 app.use(logMiddleware());
 
-app.post(
-  "/submit_content",
-  zValidator("header", BaseProtectedHeadersSchema),
-  zValidator("json", SubmissionBodySchema),
-  async (c) => {
-    const headers = c.req.valid("header");
-    const body = c.req.valid("json");
-
-    const content_slug = await submitContent(headers, body);
-    if (content_slug instanceof AppError) {
-      logger.error(`Error getting content slug: ${content_slug}`);
-      return c.json({ error: "Internal Server Error" }, 500);
-    }
-    return c.json({ content_slug }, 200);
-  },
-);
-
-app.get(
-  "content/:slug",
-  zValidator("header", BaseHeadersSchema),
-  zValidator("param", ContentItemSlugSchema),
-  async (c) => {
-    const headers = c.req.valid("header");
-    const { slug } = c.req.valid("param");
-
-    const content = await getContentItemBySlug(headers, slug);
-    if (!content) return c.json({ error: "not found" }, 404);
-    return c.json(content, 200);
-  },
-);
-
-app.get(
-  "internal/content/metadata/:id",
-  zValidator("header", BaseHeadersSchema),
-  zValidator("param", ContentItemIdSchema),
-  async (c) => {
-    const headers = c.req.valid("header");
-    const { id } = c.req.valid("param");
-
-    const content = await getContentMetadata(headers, id);
-    if (!content) return c.json({ error: "not found" }, 404);
-    return c.json(content, 200);
-  },
-);
+app.route("/content", ContentRouter);
 
 export default {
   fetch: app.fetch,

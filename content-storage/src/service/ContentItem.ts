@@ -10,7 +10,7 @@ import {
   type ContentProcessingOuptut,
 } from "@/validation/content";
 import { AppError, InternalServerError, InvalidData } from "@/utils/error";
-import { contentCreationProducer } from "@/lib/kakfa";
+import { producer } from "@/lib/kakfa";
 
 async function processContentUrl(
   content_url: string,
@@ -80,7 +80,7 @@ export async function submitContent(
   // DEBUGGING FOR NOW
   await Promise.all([
     submission.save(),
-    contentCreationProducer.send({
+    producer.send({
       topic: env.KAFKA_CONTENT_CREATION_TOPIC_NAME,
       messages: [
         {
