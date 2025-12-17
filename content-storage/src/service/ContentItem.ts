@@ -5,47 +5,9 @@ import logger from "@/lib/logger";
 import type { IBaseContentItem, IContentItem } from "@/types/ContentItem";
 import type { SubmissionBody } from "@/validation/content_url";
 import env from "@/utils/env";
-import {
-  ContentProcessingOutput,
-  type ContentProcessingOuptut,
-} from "@/validation/content";
-import { AppError, InternalServerError, InvalidData } from "@/utils/error";
+import { AppError, InternalServerError } from "@/utils/error";
 import { producer } from "@/lib/kakfa";
-
-async function processContentUrl(
-  content_url: string,
-  coordination_id: string,
-): Promise<ContentProcessingOuptut | InternalServerError | InvalidData> {
-  const response = await fetch(
-    `${env.CONTENT_PROCESSING_SERVICE_URL}/api/process`,
-    {
-      method: "POST",
-      body: JSON.stringify({ content_url }),
-      headers: {
-        "Content-Type": "application/json",
-        "CureIt-Coordination-Id": coordination_id,
-      },
-    },
-  );
-
-  if (response.status === 400) return new InvalidData("Invaild data");
-
-  logger.info(`Processing content_url=${content_url}`);
-  const json = await response.json();
-  const parsed = ContentProcessingOutput.safeParse(json);
-
-  if (parsed.error) {
-    const sample = { ...json };
-    delete sample["markdown"];
-    logger.debug(
-      `content-processing service returned invalid json: ${JSON.stringify(sample)}`,
-    );
-    logger.error(parsed.error.issues);
-    return new InternalServerError();
-  }
-
-  return parsed.data;
-}
+import { ContentProcessingClient } from "./ContentProcessingClient";
 
 export async function submitContent(
   headers: BaseProtectedHeaders,
@@ -57,9 +19,9 @@ export async function submitContent(
     logger.info(
       `Content (content_url=${content_url}) not found in cache. Proceeding to processing step`,
     );
-    const body = await processContentUrl(
-      content_url,
+    const body = await ContentProcessingClient.process(
       headers["CureIt-Coordination-Id"],
+      content_url,
     );
     if (body instanceof AppError) return body;
 

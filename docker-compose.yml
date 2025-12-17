@@ -72,6 +72,7 @@ services:
   content-storage:
     build: ./content-storage
     container_name: content-storage
+    command: bun dev
     environment:
       - NODE_ENV
       - LOG_LEVEL
@@ -89,6 +90,9 @@ services:
       - "${CONTENT_STORAGE_PORT}:${CONTENT_STORAGE_PORT}"
     networks:
       - backend-net
+    volumes:
+      - ./content-storage:/app
+      - /app/node_modules
 
   feed-service:
     build: ./feed-service/
