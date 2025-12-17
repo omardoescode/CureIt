@@ -6,6 +6,7 @@ export const contentTypes = [
   "video",
   "book",
   "course",
+  "other",
 ] as const;
 
 export type ContentType = (typeof contentTypes)[number];

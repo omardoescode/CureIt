@@ -6,7 +6,6 @@ const ContentProcessingOutputBase = z
     title: z.string(),
     extracted_at: z.iso.datetime(),
     source_url: z.url(),
-    submitted_at: z.iso.datetime(),
 
     // These are additional metadata that came from processing
     page_title: z.string(),

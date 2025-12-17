@@ -25,91 +25,77 @@ import java.util.Map;
 @Slf4j
 public class ContentProcessingService {
 
-    private final UrlValidator urlValidator;
-    private final ClassifyType classifyType;
-    private final GenerateSlug generateSlug;
-    private final ExtractData extractData;
+	private final UrlValidator urlValidator;
+	private final ClassifyType classifyType;
+	private final GenerateSlug generateSlug;
+	private final ExtractData extractData;
 
-    public ProcessContentResponse processContent(ProcessContentRequest request, String coordination) {
+	public ProcessContentResponse processContent(ProcessContentRequest request, String coordination) {
 
-        log.info("[{}] Received content processing request", coordination);
+		log.info("[{}] Received content processing request", coordination);
 
-        String url = request.getContentUrl();
+		String url = request.getContentUrl();
 
-        // validate URL
-        urlValidator.validateOrThrow(url);
+		// validate URL
+		urlValidator.validateOrThrow(url);
 
-        Document doc;
+		Document doc;
 
-        try {
-            log.info("Connected to url: {}", url);
-            doc = Jsoup.connect(url)
-                    .timeout(7000)
-                    .userAgent("Mozilla/5.0 (CureItBot/1.0)")
-                    .get();
-        } catch (Exception e) {
-            throw new ApiException("failed to fetch content from this url", "INVALID_URL", Map.of(
-                    "reason", url));
-        }
+		try {
+			log.info("Connected to url: {}", url);
+			doc = Jsoup.connect(url).timeout(7000).userAgent("Mozilla/5.0 (CureItBot/1.0)").get();
+		} catch (Exception e) {
+			throw new ApiException("failed to fetch content from this url", "INVALID_URL", Map.of("reason", url));
+		}
 
-        String type = classifyType.classify(doc, url).toString();
+		String type = classifyType.classify(doc, url).toString();
 
-        // extract metadata
-        String pageTitle = doc.title();
-        if (pageTitle == null || pageTitle.trim().isEmpty()) {
-            throw new ApiException("couldn't extract title", "NO_TITLE", Map.of(
-                    "reason", "title"));
-        }
+		// extract metadata
+		String pageTitle = doc.title();
+		if (pageTitle == null || pageTitle.trim().isEmpty()) {
+			throw new ApiException("couldn't extract title", "NO_TITLE", Map.of("reason", "title"));
+		}
 
-        String pageDescription = doc.select("meta[name=description]").attr("content");
+		String pageDescription = doc.select("meta[name=description]").attr("content");
 
-        String pageAuthor = doc.select("meta[name=author]").attr("content");
-        if (pageAuthor != null && pageAuthor.isEmpty()) {
-            pageAuthor = null;
-        }
+		String pageAuthor = doc.select("meta[name=author]").attr("content");
+		if (pageAuthor != null && pageAuthor.isEmpty()) {
+			pageAuthor = null;
+		}
 
-        Elements imgs = doc.select("img");
-        for (Element img : imgs) {
-            String imgUrl = img.absUrl("src");
+		Elements imgs = doc.select("img");
+		for (Element img : imgs) {
+			String imgUrl = img.absUrl("src");
 
-            if (!imgUrl.isEmpty()) {
-                urlValidator.validateOrThrow(imgUrl);
+			if (!imgUrl.isEmpty()) {
+				urlValidator.validateOrThrow(imgUrl);
 
-                if (!urlValidator.isValidImageUrl(imgUrl)) {
-                    log.warn("Skipping unreachable or unsafe image: {}", imgUrl);
-                    img.remove();
-                }
-            }
-        }
+				if (!urlValidator.isValidImageUrl(imgUrl)) {
+					log.warn("Skipping unreachable or unsafe image: {}", imgUrl);
+					img.remove();
+				}
+			}
+		}
 
-        String title = extractData.extractTitle(doc);
-        String author = extractData.extractAuthor(doc, pageAuthor);
+		String title = extractData.extractTitle(doc);
 
-        String markdown = "";
+		String markdown = null;
+		String author = null;
 
-        doc.select("script, style, nav, header, footer, dialog, noscript").remove();
+		doc.select("script, style, nav, header, footer, dialog, noscript").remove();
 
-        if ("article".equals(type)) {
-            markdown = extractData.extractMarkdown(doc);
-        }
+		if ("article".equals(type)) {
+			markdown = extractData.extractMarkdown(doc);
+			author = extractData.extractAuthor(doc, pageAuthor);
+		}
 
-        // extract topics -> will be changed
-        List<String> topics = Collections.emptyList();
+		// extract topics -> will be changed
+		List<String> topics = Collections.emptyList();
 
-        Instant now = Instant.now();
+		Instant now = Instant.now();
 
-        return ProcessContentResponse.builder()
-                .topics(topics)
-                .type(type)
-                .extractedAt(now.toString())
-                .submittedAt(now.toString())
-                .sourceUrl(url)
-                .pageTitle(pageTitle)
-                .pageDescription(pageDescription)
-                .pageAuthor(pageAuthor)
-                .title(title)
-                .author(author)
-                .markdown(markdown)
-                .build();
-    }
+		return ProcessContentResponse.builder().topics(topics).type(type).extractedAt(now.toString()).sourceUrl(url)
+				.pageTitle(pageTitle).pageDescription(pageDescription).pageAuthor(pageAuthor).title(title)
+				.author(author).markdown(markdown).build();
+	}
 }

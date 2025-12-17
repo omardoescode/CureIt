@@ -72,21 +72,18 @@ v1app.post("/content/submit", async (c) => {
     const userId = await getUserId(c.req.header("Authorization"));
     if (!userId) return c.json({ error: "Unauthorized" }, 401);
 
-    const res = await fetch(
-      `${env.CONTENT_STORAGE_SERVICE_URL}/api/submit_content`,
-      {
-        method: "POST",
-        headers: {
-          "CureIt-Coordination-Id": crypto.randomUUID(),
-          "CureIt-User-Id": userId,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...body,
-          submitted_at: new Date().toISOString(),
-        }),
+    const res = await fetch(`${env.CONTENT_STORAGE_SERVICE_URL}/api/content`, {
+      method: "POST",
+      headers: {
+        "CureIt-Coordination-Id": crypto.randomUUID(),
+        "CureIt-User-Id": userId,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        ...body,
+        submitted_at: new Date().toISOString(),
+      }),
+    });
 
     c.status(res.status as StatusCode);
     res.headers.forEach((value, key) => c.header(key, value));

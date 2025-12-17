@@ -11,6 +11,10 @@ const kafka = new Kafka({
   },
 });
 
-export const contentCreationProducer = kafka.producer({
+export const producer = kafka.producer({
   createPartitioner: Partitioners.DefaultPartitioner,
+});
+
+export const consumer = kafka.consumer({
+  groupId: env.KAFKA_GROUP_ID,
 });
