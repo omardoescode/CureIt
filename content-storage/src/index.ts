@@ -1,26 +1,13 @@
-import zValidator from "@/utils/zValidator";
 import { Hono } from "hono";
-import {
-  ContentItemIdSchema,
-  ContentItemSlugSchema,
-} from "./validation/content";
-import {
-  BaseHeadersSchema,
-  BaseProtectedHeadersSchema,
-} from "./validation/headers";
-import {
-  submitContent,
-  getContentItemBySlug,
-  getContentMetadata,
-} from "./service/ContentItem";
 import mongoose from "mongoose";
 import env from "@/utils/env";
 import logger from "@/lib/logger";
 import { logger as logMiddleware } from "hono/logger";
-import { SubmissionBodySchema } from "./validation/content_url";
-import { AppError } from "./utils/error";
 import { consumer, producer } from "./lib/kakfa";
 import ContentRouter from "./router/ContentRouter";
+import type { EachMessagePayload } from "kafkajs";
+import { CurationUpdateEventSchmea } from "./validation/curation";
+import { CurationUpdateHandler } from "./service/CurationMessageHandler";
 
 const promises = [];
 // Connect to database
@@ -56,10 +43,25 @@ await Promise.all(promises).catch((err) => {
   process.exit(1);
 });
 
+consumer.run({
+  eachMessage: async ({ message }: EachMessagePayload) => {
+    const parsed = CurationUpdateEventSchmea.safeParse(
+      message.value?.toString(),
+    );
+
+    if (parsed.error) {
+      logger.warn(
+        `Failed to parse message. value=${message.value?.toString()}`,
+      );
+      return;
+    }
+
+    await CurationUpdateHandler.handle(parsed.data);
+  },
+});
+
 const app = new Hono().basePath("/api");
-
 app.use(logMiddleware());
-
 app.route("/content", ContentRouter);
 
 export default {

@@ -5,7 +5,7 @@ const NonZeroNumber = z.union([z.int().positive(), z.int().negative()]);
 const BaseCurationUpdateSchema = z.object({
   content_id: z.string().nonempty(),
   reason: z.string().nonempty(),
-  coordinationId: z.string().nonempty(),
+  coordination_id: z.string().nonempty(),
 });
 
 export const CurationUpdateEventSchmea = z.discriminatedUnion("type", [
@@ -19,8 +19,12 @@ export const CurationUpdateEventSchmea = z.discriminatedUnion("type", [
     new_type: z.string().nonempty(),
   }),
   BaseCurationUpdateSchema.extend({
-    type: z.literal("item_vote_update"),
+    type: z.literal("item_upvote_update"),
     incr: NonZeroNumber,
+  }),
+  BaseCurationUpdateSchema.extend({
+    type: z.literal("item_downvote_update"),
+    decr: NonZeroNumber,
   }),
 ]);
 
