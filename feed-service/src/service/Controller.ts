@@ -27,7 +27,13 @@ export const Controller = {
         );
         break;
       case "content_updated":
-        const { topics, upvotes, downvotes, type, invalidateCache } = message;
+        const {
+          topics,
+          upvotes,
+          downvotes,
+          contentType: type,
+          invalidateCache,
+        } = message;
 
         if (invalidateCache)
           await ContentCacheService.invalidate(
