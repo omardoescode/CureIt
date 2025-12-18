@@ -7,6 +7,7 @@ export const ContentUpdateEventSchema = z.object({
   upvotes: z.number().optional(),
   downvotes: z.number().optional(),
   topics: z.array(z.string()).default([]),
+  contentType: z.string().nonempty().optional(),
   invalidateCache: z.boolean().default(false),
   // NOTE: we might consider adding [x: string]: unknown in case I want to update values of specific payloads
 });
