@@ -16,8 +16,8 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     event: InteractionEvent,
   ): Promise<CurationUpdate | null> {
     assert(event.type === "modify_topic");
-    const { topic, user_weight: weight } = event;
-    const hash_key = `curation:${event.content_id}:topics_data`;
+    const { topic, userWeight: weight } = event;
+    const hash_key = `curation:${event.contentId}:topics_data`;
 
     const all_data = await this.redis.hgetall(hash_key);
 
@@ -43,6 +43,13 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     const new_relative =
       new_total_weight > 0 ? new_topic_weight / new_total_weight : 0;
 
+    for (const [t, w] of Object.entries(weights)) {
+      if (w <= 0) {
+        delete weights[t];
+        await this.redis.hdel(hash_key, t); // remove from Redis
+      }
+    }
+
     const update_payload: Record<string, string> = {};
 
     for (const [t, w] of Object.entries(weights)) {
@@ -50,7 +57,7 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     }
 
     logger.debug(
-      `Updating ${event.content_id} with ${JSON.stringify(update_payload)}`,
+      `Updating ${event.contentId} with ${JSON.stringify(update_payload)}`,
     );
     await this.redis.hset(hash_key, update_payload);
 
@@ -61,7 +68,7 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     if (new_relative > this.THRESHOLD) {
       return {
         coordinationId: event.coordinationId,
-        content_id: event.content_id,
+        contentId: event.contentId,
         reason: `Topic "${topic}" crossed inclusion threshold (${new_relative} > ${this.THRESHOLD}).`,
         type: "topic_list_updated",
         topic,
@@ -72,7 +79,7 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     if (new_relative < this.THRESHOLD && old_relative > this.THRESHOLD) {
       return {
         coordinationId: event.coordinationId,
-        content_id: event.content_id,
+        contentId: event.contentId,
         reason: `Topic "${topic}" dropped below exclusion threshold (${new_relative} < ${this.THRESHOLD}).`,
         type: "topic_list_updated",
         topic,

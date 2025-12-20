@@ -14,7 +14,11 @@ import tools.jackson.databind.annotation.JsonNaming;
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class VoteRequest {
-    private Integer userWeight;
-    @NotBlank
-    private String contentId;
+	private Integer userWeight;
+	@NotBlank
+	private String contentId;
+
+	public Integer getUserWeight() {
+		return userWeight == null ? 1 : userWeight;
+	}
 }

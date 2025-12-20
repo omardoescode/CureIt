@@ -1,6 +1,7 @@
 package com.cureit.interactionservice.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,9 +15,16 @@ import tools.jackson.databind.annotation.JsonNaming;
 @AllArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class ModifyTopicRequest {
-    @NotBlank
-    private String topic;
-    private Integer userWeight = 1;
-    @NotBlank
-    private String contentId;
+	@NotBlank
+	private String topic;
+	private Integer userWeight = 1;
+	@NotBlank
+	private String contentId;
+	@NotNull
+	private boolean remove;
+
+	public Integer getUserWeight() {
+		int weight = userWeight == null ? 1 : userWeight;
+		return (remove ? -1 : 1) * weight;
+	}
 }

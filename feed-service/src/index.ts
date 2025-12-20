@@ -50,7 +50,7 @@ consumer
       try {
         const msg = JSON.parse(body);
         parsed = ConsumerMessageSchema.parse(msg);
-        logger.warn(`parsed ${body}`);
+        logger.info(`parsed ${body}`);
       } catch (_) {
         // Must have been a message we don't care aobut
         // TODO: Later, distinguish between each type of message, this is an architecture task

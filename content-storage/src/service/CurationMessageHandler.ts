@@ -22,16 +22,16 @@ export const CurationUpdateHandler = {
       case "item_upvote_update":
         {
           const updatedItem = await BaseContentItem.findByIdAndUpdate(
-            message.content_id,
-            { $inc: { upvotes: message.incr } },
+            message.contentId,
+            { $inc: { upvotes: message.value } },
             { returnDocument: "after" },
           ).lean();
 
           if (updatedItem) {
             const upvotes = updatedItem.upvotes;
             await send({
-              contentId: message.content_id,
-              coordinationId: message.coordination_id,
+              contentId: message.contentId,
+              coordinationId: message.coordinationId,
               upvotes,
             });
           }
@@ -41,16 +41,16 @@ export const CurationUpdateHandler = {
       case "item_downvote_update":
         {
           const updatedItem = await BaseContentItem.findByIdAndUpdate(
-            message.content_id,
-            { $inc: { downvotes: message.decr } },
+            message.contentId,
+            { $inc: { downvotes: message.value } },
             { returnDocument: "after" },
           ).lean();
 
           if (updatedItem) {
             const downvotes = updatedItem.upvotes;
             await send({
-              contentId: message.content_id,
-              coordinationId: message.coordination_id,
+              contentId: message.contentId,
+              coordinationId: message.coordinationId,
               downvotes,
             });
           }
@@ -63,16 +63,16 @@ export const CurationUpdateHandler = {
             ? { $addToSet: { topics: message.topic } }
             : { $pull: { topics: message.topic } };
 
-        await BaseContentItem.updateOne({ _id: message.content_id }, update);
+        await BaseContentItem.updateOne({ _id: message.contentId }, update);
 
-        const updatedItem = await BaseContentItem.findById(message.content_id)
+        const updatedItem = await BaseContentItem.findById(message.contentId)
           .lean()
           .select("topics");
 
         if (updatedItem) {
           await send({
-            contentId: message.content_id,
-            coordinationId: message.coordination_id,
+            contentId: message.contentId,
+            coordinationId: message.coordinationId,
             topics: updatedItem.topics,
           });
         }
@@ -80,24 +80,24 @@ export const CurationUpdateHandler = {
       }
 
       case "content_type_update": {
-        if (!contentTypes.includes(message.new_type as ContentType)) {
+        if (!contentTypes.includes(message.newType as ContentType)) {
           logger.warn(
-            `Invalid content type update: invalid value of type (${message.new_type})`,
+            `Invalid content type update: invalid value of type (${message.newType})`,
           );
           return;
         }
         const result = await BaseContentItem.updateOne(
-          { _id: message.content_id },
-          { $set: { type: message.new_type } },
+          { _id: message.contentId },
+          { $set: { type: message.newType } },
         );
 
         if (result.modifiedCount > 0) {
           // TODO: Create a method in content processing, that already has a type in mind
           // WARN: In later phase anyway
           await send({
-            contentId: message.content_id,
-            coordinationId: message.coordination_id,
-            contentType: message.new_type,
+            contentId: message.contentId,
+            coordinationId: message.coordinationId,
+            contentType: message.newType,
           });
         }
         break;

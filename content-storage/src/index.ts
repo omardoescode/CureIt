@@ -43,22 +43,38 @@ await Promise.all(promises).catch((err) => {
   process.exit(1);
 });
 
-consumer.run({
-  eachMessage: async ({ message }: EachMessagePayload) => {
-    const parsed = CurationUpdateEventSchmea.safeParse(
-      message.value?.toString(),
-    );
+consumer
+  .run({
+    eachMessage: async ({ message }: EachMessagePayload) => {
+      const stringified = message.value?.toString();
+      if (!stringified) {
+        logger.warn(`Didn't receive a value`);
+        return;
+      }
+      let json: any;
+      try {
+        json = JSON.parse(stringified);
+      } catch {
+        logger.warn(`Failed to parse message to JSON: ${stringified}`);
+        return;
+      }
 
-    if (parsed.error) {
-      logger.warn(
-        `Failed to parse message. value=${message.value?.toString()}`,
-      );
-      return;
-    }
+      const parsed = CurationUpdateEventSchmea.safeParse(json);
 
-    await CurationUpdateHandler.handle(parsed.data);
-  },
-});
+      if (parsed.error) {
+        logger.warn(
+          `Failed to parse message. value=${message.value?.toString()}`,
+          parsed.error.issues,
+        );
+        return;
+      }
+
+      logger.info(`Received mesage: ${stringified}`);
+      await CurationUpdateHandler.handle(parsed.data);
+    },
+  })
+  .then(() => logger.info("Consumer run method has been thened lol"));
+
 
 const app = new Hono().basePath("/api");
 app.use(logMiddleware());

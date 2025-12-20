@@ -23,7 +23,8 @@ export default class CurationService {
     this.strategies = new Map();
     this.strategies.set("modify_topic", new ModifyTopicStrategy(redis));
     this.strategies.set("modify_type", new TopTypeStrategy(redis));
-    this.strategies.set("vote", new ItemVoteStrategy(redis));
+    this.strategies.set("upvote", new ItemVoteStrategy(redis, "upvote"));
+    this.strategies.set("downvote", new ItemVoteStrategy(redis, "downvote"));
   }
 
   public async handle_event(event: InteractionEvent) {
@@ -37,19 +38,17 @@ export default class CurationService {
     if (payload) {
       const { reason, ...rest } = payload;
       logger.info(
-        `Emitting curation update for content_id=${rest.content_id}. reason=${reason}`,
+        `Emitting curation update for content_id=${rest.contentId}. reason=${reason}`,
       );
       await this.emitEvent(rest);
     }
   }
   private async emitEvent(evt: Omit<CurationUpdate, "reason">) {
-    const { content_id, ...rest } = evt;
     await this.producer.send({
       topic: env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
       messages: [
         {
-          key: content_id,
-          value: JSON.stringify(rest),
+          value: JSON.stringify(evt),
         },
       ],
     });

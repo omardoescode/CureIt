@@ -9,6 +9,7 @@ const envSchema = z.object({
   CONTENT_STORAGE_SERVICE_URL: z.url(),
   USER_SERVICE_URL: z.url(),
   FEED_SERVICE_URL: z.url(),
+  INTERACTION_SERVICE_URL: z.url(),
   PORT: z.string().transform(validPort),
 });
 

@@ -1,9 +1,5 @@
 import z from "zod";
 
-const InteractionTypeSchema = z.enum(["modify_type", "modify_topic", "vote"]);
-
-export type InteractionType = z.infer<typeof InteractionTypeSchema>;
-
 const BaseInteractionEvent = z.object({
   timestamp: z.coerce.date(),
   coordinationId: z.string().nonempty(),
