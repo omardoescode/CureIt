@@ -19,7 +19,7 @@ import { Hono } from "hono";
 const FeedRouter = new Hono();
 
 FeedRouter.get(
-  "/:type{hot|new|top}",
+  "/:type{^(hot|new|top)$}",
   zValidator("header", BaseProtectedHeadersSchema),
   zValidator("param", FeedTypeSchema),
   zValidator(
@@ -63,7 +63,7 @@ FeedRouter.get(
 );
 
 FeedRouter.get(
-  "/topic/:topic/:type{hot|new|top}",
+  "/topic/:topic/:type{^(hot|new|top)$}",
   zValidator("header", BaseHeadersSchema),
   zValidator("param", FeedTypeSchema.extend(TopicQuerySchema.shape)),
   zValidator(

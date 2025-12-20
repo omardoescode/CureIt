@@ -1,20 +1,19 @@
 import type { FeedCursor } from "@/types/Feed";
 import type { FeedFilter, FeedSource } from "./FeedSource";
-import logger from "@/lib/logger";
 
 export class CompositeFeedSource implements FeedSource {
   constructor(
     private cache: FeedSource,
     private archive: FeedSource,
   ) {}
-
   async add(
     contentId: string,
     score: number,
-    meta: Record<string, string | number | Date | boolean>,
+    itemType: string,
+    createdAt: Date,
   ) {
-    await this.archive.add(contentId, score, meta);
-    await this.cache.add(contentId, score, meta);
+    await this.archive.add(contentId, score, itemType, createdAt);
+    await this.cache.add(contentId, score, itemType, createdAt);
   }
 
   async fetchPage(
@@ -23,7 +22,7 @@ export class CompositeFeedSource implements FeedSource {
     filters: FeedFilter,
   ): Promise<{ items: FeedCursor[]; nextCursor: FeedCursor | null }> {
     const cacheResult = await this.cache.fetchPage(limit, cursor, filters);
-    logger.debug("Caching Result: ", JSON.stringify(cacheResult));
+    console.debug("Caching Result: ", JSON.stringify(cacheResult));
 
     if (cacheResult.items.length === limit) {
       return cacheResult;
@@ -37,7 +36,7 @@ export class CompositeFeedSource implements FeedSource {
       continuationCursor,
       filters,
     );
-    logger.debug("Archive Result: ", JSON.stringify(cacheResult));
+    console.debug("Archive Result: ", JSON.stringify(cacheResult));
 
     const items = [...cacheResult.items, ...archiveResult.items];
     const nextCursor =

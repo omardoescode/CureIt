@@ -4,6 +4,7 @@ import { FeedId } from "./FeedId";
 import type { FeedRanker } from "./FeedRanker";
 import assert from "assert";
 
+// TODO: Add a method for bulk insert, and use it on following
 export class Feed {
   constructor(
     public readonly key: FeedId,
@@ -13,11 +14,20 @@ export class Feed {
 
   async addItem(
     contentId: string,
-    data: { upvotes: number; downvotes: number; createdAt: Date },
-    meta?: Record<string, string | number | boolean | Date>,
+    {
+      upvotes,
+      downvotes,
+      itemType,
+      createdAt,
+    }: {
+      upvotes: number;
+      downvotes: number;
+      itemType: string;
+      createdAt: Date;
+    },
   ) {
-    const score = this.ranker.score(data);
-    await this.feedSource.add(contentId, score, meta);
+    const score = this.ranker.score({ upvotes, downvotes, createdAt });
+    await this.feedSource.add(contentId, score, itemType, createdAt);
   }
 
   async fetchPage(

@@ -1,0 +1,23 @@
+[
+  {
+    _id: ObjectId('6941f8b2b58deabec2dfc07a'),
+    topics: [],
+    slug: 'real-time-local-inventory-search-using-redis-dfc07a'
+  },
+  {
+    _id: ObjectId('6945945e8ba8b57c0c51fcf6'),
+    topics: [ 'ai' ],
+    slug: 'things-you-should-never-do-part-i-joel-on-software-51fcf6'
+  },
+  {
+    _id: ObjectId('694594858ba8b57c0c51fcfc'),
+    topics: [ 'swe' ],
+    slug: 'the-majestic-monolith-signal-v-noise-51fcfc'
+  },
+  {
+    _id: ObjectId('694594988ba8b57c0c51fd01'),
+    topics: [ 'swe', 'testing' ],
+    slug: 'the-joel-test-12-steps-to-better-code-joel-on-software-51fd01'
+  }
+]
+

@@ -25,6 +25,7 @@ export default class TopTypeStrategy extends CurationStrategy {
     }
 
     return {
+      coordinationId: event.coordinationId,
       content_id: event.content_id,
       reason: `Content type updated to ${event.content_type} with top score ${new_score}.`,
       type: "content_type_update",
@@ -32,4 +33,3 @@ export default class TopTypeStrategy extends CurationStrategy {
     };
   }
 }
-

@@ -28,11 +28,12 @@ export class RedisFeedSource implements FeedSource {
     filters?: FeedFilter,
   ): Promise<{ items: FeedCursor[]; nextCursor: FeedCursor | null }> {
     assert(limit > 0, "limit must be greater than 0");
-    assert(!filters);
+
+    const fetchLimit = limit + 1;
     const id = this.key.value();
     let raw: string[];
     if (!cursor) {
-      raw = await this.redis.zrevrange(id, 0, limit - 1, "WITHSCORES");
+      raw = await this.redis.zrevrange(id, 0, fetchLimit - 1, "WITHSCORES");
     } else {
       const maxScore = `(${cursor.score}`;
       raw = await this.redis.zrevrangebyscore(
@@ -42,7 +43,7 @@ export class RedisFeedSource implements FeedSource {
         "WITHSCORES",
         "LIMIT",
         0,
-        limit,
+        fetchLimit,
       );
     }
 
@@ -54,8 +55,9 @@ export class RedisFeedSource implements FeedSource {
       });
     }
 
+    const hasMore = items.length > limit;
     const page = items.slice(0, limit);
-    const nextCursor = page.length ? page[page.length - 1]! : null;
+    const nextCursor = hasMore ? page[page.length - 1]! : null;
 
     return { items: page, nextCursor };
   }

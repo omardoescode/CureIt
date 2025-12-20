@@ -5,13 +5,6 @@ import logger from "@/lib/logger";
 import assert from "assert";
 import z from "zod";
 
-const FeedMetaSchema = z
-  .object({
-    itemType: z.string(),
-    createdAt: z.date(),
-  })
-  .strict();
-
 const FeedFilterSchema = z
   .object({
     itemType: z.object({ eq: z.string() }).optional(),
@@ -38,11 +31,9 @@ export class MongoFeedSource implements FeedSource {
   async add(
     contentId: string,
     score: number,
-    meta?: Record<string, string | number | boolean | Date>,
+    itemType: string,
+    createdAt: Date,
   ) {
-    const parsed = FeedMetaSchema.safeParse(meta);
-    assert(!parsed.error, "Invalid meta");
-
     await FeedItemModel.updateOne(
       {
         ownerType: this.ownerType,
@@ -57,8 +48,8 @@ export class MongoFeedSource implements FeedSource {
           feedType: this.feedType,
           contentId,
           score,
-          createdAt: parsed.data.createdAt,
-          itemType: parsed.data.itemType,
+          createdAt: createdAt,
+          itemType: itemType,
         },
       },
       { upsert: true },
@@ -102,17 +93,21 @@ export class MongoFeedSource implements FeedSource {
       ];
     }
 
+    // TODO: Fix the problem of having more fields that feed service in here
     const docs = await FeedItemModel.find(query)
       .sort({ score: -1, contentId: -1 })
-      .limit(limit)
+      .limit(limit + 1)
       .lean();
 
-    const items: FeedCursor[] = docs.map((doc) => ({
+    const hasMore = docs.length > limit;
+    const pageDocs = hasMore ? docs.slice(0, limit) : docs;
+
+    const items: FeedCursor[] = pageDocs.map((doc) => ({
       contentId: doc.contentId,
       score: doc.score,
     }));
 
-    const nextCursor = items.length ? items[items.length - 1]! : null;
+    const nextCursor = hasMore ? items[items.length - 1]! : null;
 
     return { items, nextCursor };
   }

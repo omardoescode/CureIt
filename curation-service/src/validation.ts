@@ -7,6 +7,7 @@ const InteractionTypeSchema = z.enum(["modify_type", "modify_topic", "vote"]);
 export type InteractionType = z.infer<typeof InteractionTypeSchema>;
 
 const BaseInteractionEvent = z.object({
+  coordinationId: z.string().nonempty(),
   timestamp: z.coerce.date(),
 });
 
@@ -41,6 +42,7 @@ export const InteractionEventSchema = z.discriminatedUnion("type", [
 export type InteractionEvent = z.infer<typeof InteractionEventSchema>;
 
 const BaseCurationUpdateSchema = z.object({
+  coordinationId: z.string().nonempty(),
   content_id: z.string().nonempty(),
   reason: z.string().nonempty(),
 });

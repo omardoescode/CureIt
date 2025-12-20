@@ -29,7 +29,7 @@ ContentRouter.post(
 
     const content_slug = await submitContent(headers, body);
     if (content_slug instanceof AppError) {
-      logger.error(`Error getting content slug: ${content_slug}`);
+      logger.debug(content_slug.toLog());
       return c.json({ error: "Internal Server Error" }, 500);
     }
     return c.json({ content_slug }, 200);
