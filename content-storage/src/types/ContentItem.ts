@@ -1,5 +1,31 @@
 import type { ObjectId, Document } from "mongoose";
 
+export const contentTypes = [
+  "article",
+  "tweet",
+  "video",
+  "book",
+  "course",
+  "other",
+] as const;
+
+export type ContentType = (typeof contentTypes)[number];
+
+export interface IBaseContentItem extends Document<ObjectId> {
+  slug: string;
+  source_url: string;
+  type: ContentType;
+  title: string;
+  page_title: string;
+  page_description: string | null;
+  page_author: string | null;
+  extracted_at: Date;
+  created_at: Date;
+  topics: string[];
+  upvotes: number;
+  downvotes: number;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 type Payload = {};
 
@@ -33,25 +59,12 @@ export interface BookPayload extends Payload {
   is_free: boolean | null;
 }
 
-export const contentTypes = [
-  "article",
-  "tweet",
-  "video",
-  "book",
-  "course",
-] as const;
-
-export type ContentType = (typeof contentTypes)[number];
-
-export interface IContentItem extends Document<ObjectId> {
-  slug: string;
-  source_url: string;
-  type: ContentType;
-  title: string;
-  page_title: string;
-  page_description: string | null;
-  page_author: string | null;
-  extracted_at: Date;
-  created_at: Date;
-  is_private: boolean;
-}
+export type IContentItem = IBaseContentItem &
+  (
+    | ({ type: "article" } & ArticlePayload)
+    | ({ type: "tweet" } & TweetPayload)
+    | ({ type: "course" } & CoursePayload)
+    | ({ type: "video" } & VideoPayload)
+    | ({ type: "book" } & BookPayload)
+    | { type: "other" }
+  );

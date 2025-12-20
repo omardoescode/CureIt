@@ -1,60 +1,84 @@
-import zValidator from "@/utils/zValidator";
 import { Hono } from "hono";
-import { ContentItemSlugSchema } from "./validation/content";
-import {
-  BaseHeadersSchema,
-  BaseProtectedHeadersSchema,
-} from "./validation/headers";
-import { submitContent, getContentItem } from "./service/ContentItem";
 import mongoose from "mongoose";
 import env from "@/utils/env";
 import logger from "@/lib/logger";
 import { logger as logMiddleware } from "hono/logger";
-import { SubmissionBodySchema } from "./validation/content_url";
-import { AppError } from "./utils/error";
+import { consumer, producer } from "./lib/kakfa";
+import ContentRouter from "./router/ContentRouter";
+import type { EachMessagePayload } from "kafkajs";
+import { CurationUpdateEventSchmea } from "./validation/curation";
+import { CurationUpdateHandler } from "./service/CurationMessageHandler";
 
+const promises = [];
 // Connect to database
-await mongoose
-  .connect(env.MONGO_URL)
-  .then(() => logger.info("Connected to mongoose successfully"))
-  .catch((err) => {
-    console.error("Failed to connect to the database");
-    throw err;
-  });
+promises.push(
+  mongoose
+    .connect(env.MONGO_URL)
+    .then(() => logger.info("Connected to mongoose successfully"))
+    .catch((err) => {
+      console.error("Failed to connect to the database");
+      throw err;
+    }),
+);
+
+// Connect to kafka
+promises.push(
+  producer
+    .connect()
+    .then(() => logger.info("Connected to kafka producer successfully")),
+  consumer
+    .connect()
+    .then(() =>
+      consumer.subscribe({
+        topics: [env.KAFKA_CURATION_UPDATE_TOPIC_NAME],
+      }),
+    )
+    .then(() =>
+      logger.info("Connected to kafka consumer, and subscribed successfully"),
+    ),
+);
+
+await Promise.all(promises).catch((err) => {
+  logger.error(err);
+  process.exit(1);
+});
+
+consumer
+  .run({
+    eachMessage: async ({ message }: EachMessagePayload) => {
+      const stringified = message.value?.toString();
+      if (!stringified) {
+        logger.warn(`Didn't receive a value`);
+        return;
+      }
+      let json: any;
+      try {
+        json = JSON.parse(stringified);
+      } catch {
+        logger.warn(`Failed to parse message to JSON: ${stringified}`);
+        return;
+      }
+
+      const parsed = CurationUpdateEventSchmea.safeParse(json);
+
+      if (parsed.error) {
+        logger.warn(
+          `Failed to parse message. value=${message.value?.toString()}`,
+          parsed.error.issues,
+        );
+        return;
+      }
+
+      logger.info(`Received mesage: ${stringified}`);
+      await CurationUpdateHandler.handle(parsed.data);
+    },
+  })
+  .then(() => logger.info("Consumer run method has been thened lol"));
+
 
 const app = new Hono().basePath("/api");
-
 app.use(logMiddleware());
-
-app.post(
-  "/submit_content",
-  zValidator("header", BaseProtectedHeadersSchema),
-  zValidator("json", SubmissionBodySchema),
-  async (c) => {
-    const headers = c.req.valid("header");
-    const body = c.req.valid("json");
-
-    const content_slug = await submitContent(headers, body);
-    if (content_slug instanceof AppError) {
-      logger.error(`Error getting content slug: ${content_slug}`);
-      return c.json({ error: "Internal Server Error" }, 500);
-    }
-    return c.json({ content_slug }, 200);
-  },
-);
-
-app.get(
-  "content/:slug",
-  zValidator("header", BaseHeadersSchema),
-  zValidator("param", ContentItemSlugSchema),
-  async (c) => {
-    const headers = c.req.valid("header");
-    const { slug } = c.req.valid("param");
-
-    const content = await getContentItem(headers, slug);
-    return c.json(content, 200);
-  },
-);
+app.route("/content", ContentRouter);
 
 export default {
   fetch: app.fetch,
