@@ -1,7 +1,9 @@
 import logger from "@/lib/logger";
 import { FollowshipModel } from "@/models/Followship";
+import { FeedService } from "./FeedService";
+import redis from "@/lib/redis";
 
-export const FollowingService = {
+export const FollowingService = (coordinationId: string) => ({
   getUserTopics: async (userId: string): Promise<string[]> => {
     return FollowshipModel.distinct("topic", { userId });
   },
@@ -23,7 +25,8 @@ export const FollowingService = {
 
     logger.debug("Followship saved");
 
-    // TODO: Handle updates of the feed
+    const feedService = FeedService(coordinationId, redis);
+    await feedService.subscribeToTopic(userId, topic);
   },
   unfollow: async ({
     userId,
@@ -34,8 +37,7 @@ export const FollowingService = {
   }): Promise<boolean> => {
     const follow = await FollowshipModel.deleteOne({ userId, topic });
     const res = follow.deletedCount > 0;
-    // TODO: Handle updates of the feed
 
     return res;
   },
-};
+});

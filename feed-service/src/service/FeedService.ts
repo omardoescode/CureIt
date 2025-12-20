@@ -11,7 +11,11 @@ import { createRanker } from "./FeedRanker";
 import { NotFoundInStorage } from "./ContentStorageClient";
 import logger from "@/lib/logger";
 import type { FeedFilter } from "./FeedSource";
+import { FEED_TYPES } from "@/validation/RESTSchemas";
 
+/**
+ * @notes When a user unsubscribes to a topic, a feed doesn't change because it's immutable. However, a user's feed won't have new items from now on
+ */
 export const FeedService = (coordinationId: string, redis: Redis) => {
   const createFeed = (
     ownerType: "user" | "topic",
@@ -23,7 +27,6 @@ export const FeedService = (coordinationId: string, redis: Redis) => {
 
     let source;
     if (options?.filtered && ownerType === "topic") {
-      // only Mongo supports filters for now
       source = new MongoFeedSource(ownerType, ownerId, type);
     } else {
       const redisSource = new RedisFeedSource(redis, feedId, 1_000);
@@ -40,19 +43,26 @@ export const FeedService = (coordinationId: string, redis: Redis) => {
       const cache = await ContentCacheService.fetchContentItem(
         coordinationId,
         contentId,
-        ["topics", "upvotes", "downvotes", "created_at"],
+        ["topics", "upvotes", "downvotes", "created_at", "type"],
       );
       if (cache instanceof NotFoundInStorage) return;
 
-      const { topics, upvotes, downvotes, created_at } = cache;
-      if (!topics || upvotes == null || downvotes == null || !created_at) {
+      const { topics, upvotes, downvotes, created_at, type: itemType } = cache;
+      if (
+        !topics ||
+        upvotes == null ||
+        downvotes == null ||
+        !created_at ||
+        !itemType
+      ) {
         logger.warn(
-          `Invalid path: (!topics || upvotes == null || downvotes == null || !created_at) ${JSON.stringify({ topics, upvotes, downvotes, created_at })}`,
+          `Invalid path: (!topics || upvotes == null || downvotes == null || !created_at || itemType) ${JSON.stringify({ topics, upvotes, downvotes, created_at })}`,
         );
         return;
       }
 
-      const users = await FollowingService.getTopicsFollowerIds(topics);
+      const users =
+        await FollowingService(coordinationId).getTopicsFollowerIds(topics);
 
       await Promise.all(
         users
@@ -63,6 +73,7 @@ export const FeedService = (coordinationId: string, redis: Redis) => {
                 upvotes,
                 downvotes,
                 createdAt: new Date(created_at),
+                itemType,
               });
             });
           })
@@ -78,6 +89,7 @@ export const FeedService = (coordinationId: string, redis: Redis) => {
                 upvotes,
                 downvotes,
                 createdAt: new Date(created_at),
+                itemType,
               });
             });
           })
@@ -105,6 +117,47 @@ export const FeedService = (coordinationId: string, redis: Redis) => {
       const filtered = filters && Object.keys(filters).length > 0;
       const topicFeed = createFeed("topic", topic, type, { filtered });
       return topicFeed.fetchPage(limit, cursor, filters);
+    },
+
+    async subscribeToTopic(userId: string, topic: string, limit = 50) {
+      await Promise.all(
+        FEED_TYPES.map(async (feedType) => {
+          const userFeed = createFeed("user", userId, feedType);
+          const topicFeed = createFeed("topic", topic, feedType);
+
+          const page = await topicFeed.fetchPage(limit, null);
+
+          return Promise.all(
+            page.items.map(async (item) => {
+              const cache = await ContentCacheService.fetchContentItem(
+                coordinationId,
+                item.contentId,
+                ["upvotes", "downvotes", "created_at", "type"],
+              );
+              if (cache instanceof NotFoundInStorage) return;
+
+              const { upvotes, downvotes, created_at, type: itemType } = cache;
+              if (
+                upvotes == null ||
+                downvotes == null ||
+                !created_at ||
+                !itemType
+              ) {
+                logger.warn(
+                  `Invalid path: (upvotes == null || downvotes == null || !created_at || itemType) ${JSON.stringify({ upvotes, downvotes, created_at })}`,
+                );
+                return;
+              }
+              await userFeed.addItem(item.contentId, {
+                upvotes,
+                downvotes,
+                itemType,
+                createdAt: new Date(created_at),
+              });
+            }),
+          );
+        }),
+      );
     },
   };
 };

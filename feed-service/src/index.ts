@@ -58,10 +58,12 @@ consumer
         return;
       }
 
-      await Controller.handleMessage(parsed);
+      await Controller.handleMessage(parsed).catch((err) =>
+        logger.error("Error occurred while handling messages", err),
+      );
     },
   })
-  .then(() => logger.info("done"));
+  .then(() => logger.info("Consumer run method has been registered"));
 
 export default {
   fetch: app.fetch,

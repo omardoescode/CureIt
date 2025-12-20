@@ -53,6 +53,17 @@ export class AppError extends Error {
       },
     };
   }
+
+  toLog() {
+    return {
+      name: this.name,
+      message: this.message,
+      httpCode: this.httpCode,
+      errorCode: this.errorCode,
+      details: this.details,
+      stack: this.stack,
+    };
+  }
 }
 
 export class InternalServerError extends AppError {

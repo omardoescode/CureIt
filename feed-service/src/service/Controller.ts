@@ -8,13 +8,13 @@ export const Controller = {
   handleMessage: async (message: ConsumerMessage) => {
     switch (message.type) {
       case "follow_topic":
-        await FollowingService.follow({
+        await FollowingService(message.coordinationId).follow({
           topic: message.topic,
           userId: message.userId,
         });
         break;
       case "unfollow_topic":
-        await FollowingService.unfollow({
+        await FollowingService(message.coordinationId).unfollow({
           topic: message.topic,
           userId: message.userId,
         });

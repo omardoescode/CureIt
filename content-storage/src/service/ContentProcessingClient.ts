@@ -23,7 +23,8 @@ export const ContentProcessingClient = {
       },
     );
 
-    if (response.status === 400) return new InvalidData("Invaild data");
+    if (response.status === 400)
+      return new InvalidData(`Invaild data, ${await response.text()}`);
 
     logger.info(`Processing content_url=${content_url}`);
     const json = await response.json();

@@ -60,6 +60,7 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     // Threshold logic
     if (new_relative > this.THRESHOLD) {
       return {
+        coordinationId: event.coordinationId,
         content_id: event.content_id,
         reason: `Topic "${topic}" crossed inclusion threshold (${new_relative} > ${this.THRESHOLD}).`,
         type: "topic_list_updated",
@@ -70,6 +71,7 @@ export default class AggregateTopicStrategy extends CurationStrategy {
 
     if (new_relative < this.THRESHOLD && old_relative > this.THRESHOLD) {
       return {
+        coordinationId: event.coordinationId,
         content_id: event.content_id,
         reason: `Topic "${topic}" dropped below exclusion threshold (${new_relative} < ${this.THRESHOLD}).`,
         type: "topic_list_updated",

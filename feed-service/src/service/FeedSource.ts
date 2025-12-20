@@ -11,7 +11,8 @@ export interface FeedSource {
   add(
     contentId: string,
     score: number,
-    meta?: Record<string, string | number | boolean | Date>,
+    itemType: string,
+    createdAt: Date,
   ): Promise<void>;
   fetchPage(
     limit: number,

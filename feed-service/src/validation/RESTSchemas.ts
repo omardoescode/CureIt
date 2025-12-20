@@ -10,7 +10,8 @@ export const BaseProtectedHeadersSchema = BaseHeadersSchema.extend({
   "CureIt-User-Id": z.string().nonempty(),
 });
 
-export const FeedTypeSchema = z.object({ type: z.enum(["new", "top", "hot"]) });
+export const FEED_TYPES = ["new", "top", "hot"] as const;
+export const FeedTypeSchema = z.object({ type: z.enum(FEED_TYPES) });
 
 export const FeedFieldsQuerySchema = z.object({
   fields: z.string().optional(),
