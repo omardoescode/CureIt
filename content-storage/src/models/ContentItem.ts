@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import {
   contentTypes,
   type ArticlePayload,
@@ -7,7 +8,6 @@ import {
   type TweetPayload,
   type VideoPayload,
 } from "@/types/ContentItem";
-import mongoose from "mongoose";
 
 export const ContentItemSchema = new mongoose.Schema<IContentItem>(
   {
@@ -30,8 +30,10 @@ export const ContentItemSchema = new mongoose.Schema<IContentItem>(
     page_author: { type: String, trim: true },
     type: { type: String, enum: contentTypes },
     extracted_at: { type: Date, required: true },
-    created_at: { type: Date, default: Date.now },
-    is_private: { type: Boolean, default: false },
+    created_at: { type: Date, default: Date.now }, // TODO: convert to using timestamps: true
+    topics: [{ type: String, trim: true, lowercase: true }],
+    upvotes: { type: Number, default: 1 },
+    downvotes: { type: Number, default: 0 },
   },
   { collection: "content_items", discriminatorKey: "type" },
 );
@@ -51,24 +53,25 @@ ContentItemSchema.pre<IContentItem>(
   },
 );
 
-const ContentItem = mongoose.model<IContentItem>(
+const BaseContentItem = mongoose.model<IContentItem>(
   "ContentItem",
   ContentItemSchema,
 );
 
-export const ArticleItem = ContentItem.discriminator<
+export const ArticleItem = BaseContentItem.discriminator<
   IContentItem & ArticlePayload
 >(
   "article",
   new mongoose.Schema<ArticlePayload>({
-    title: { type: String, required: true, trim: true },
-    author: { type: String, required: true, trim: true },
+    author: { type: String, trim: true },
     markdown: String,
     profile_pic: String,
   }),
 );
 
-export const TweetItem = ContentItem.discriminator<IContentItem & TweetPayload>(
+export const TweetItem = BaseContentItem.discriminator<
+  IContentItem & TweetPayload
+>(
   "tweet",
   new mongoose.Schema<TweetPayload>({
     author: { type: String, required: true, trim: true },
@@ -77,7 +80,7 @@ export const TweetItem = ContentItem.discriminator<IContentItem & TweetPayload>(
   }),
 );
 
-export const CourseItem = ContentItem.discriminator<
+export const CourseItem = BaseContentItem.discriminator<
   IContentItem & CoursePayload
 >(
   "course",
@@ -95,7 +98,9 @@ export const CourseItem = ContentItem.discriminator<
   }),
 );
 
-export const VideoItem = ContentItem.discriminator<IContentItem & VideoPayload>(
+export const VideoItem = BaseContentItem.discriminator<
+  IContentItem & VideoPayload
+>(
   "video",
   new mongoose.Schema<VideoPayload>({
     title: { type: String, required: true, trim: true },
@@ -107,7 +112,9 @@ export const VideoItem = ContentItem.discriminator<IContentItem & VideoPayload>(
   }),
 );
 
-export const BookItem = ContentItem.discriminator<IContentItem & BookPayload>(
+export const BookItem = BaseContentItem.discriminator<
+  IContentItem & BookPayload
+>(
   "BookItem",
   new mongoose.Schema<BookPayload>({
     url: String,
@@ -135,4 +142,4 @@ export const BookItem = ContentItem.discriminator<IContentItem & BookPayload>(
   }),
 );
 
-export default ContentItem;
+export default BaseContentItem;

@@ -7,7 +7,7 @@ const InteractionTypeSchema = z.enum(["modify_type", "modify_topic", "vote"]);
 export type InteractionType = z.infer<typeof InteractionTypeSchema>;
 
 const BaseInteractionEvent = z.object({
-  content_id: z.string().nonempty(),
+  coordinationId: z.string().nonempty(),
   timestamp: z.coerce.date(),
 });
 
@@ -20,10 +20,12 @@ export const InteractionEventSchema = z.discriminatedUnion("type", [
       .regex(/^(\d+|[a-zA-Z]+|:)$/)
       .transform((x) => x.toLowerCase()),
     user_weight: NonZeroNumber,
+    content_id: z.string().nonempty(),
   }),
   BaseInteractionEvent.extend({
     type: z.literal(InteractionTypeSchema.enum.vote),
     user_weight: NonZeroNumber,
+    content_id: z.string().nonempty(),
   }),
   BaseInteractionEvent.extend({
     type: z.literal(InteractionTypeSchema.enum.modify_type),
@@ -33,12 +35,14 @@ export const InteractionEventSchema = z.discriminatedUnion("type", [
       .nonempty()
       .regex(/^(\d+|[a-zA-Z]+|:)$/)
       .transform((x) => x.toLowerCase()),
+    content_id: z.string().nonempty(),
   }),
 ]);
 
 export type InteractionEvent = z.infer<typeof InteractionEventSchema>;
 
 const BaseCurationUpdateSchema = z.object({
+  coordinationId: z.string().nonempty(),
   content_id: z.string().nonempty(),
   reason: z.string().nonempty(),
 });
@@ -60,4 +64,3 @@ export const CurationUpdateSchmea = z.discriminatedUnion("type", [
 ]);
 
 export type CurationUpdate = z.infer<typeof CurationUpdateSchmea>;
-

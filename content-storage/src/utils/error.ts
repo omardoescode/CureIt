@@ -53,6 +53,17 @@ export class AppError extends Error {
       },
     };
   }
+
+  toLog() {
+    return {
+      name: this.name,
+      message: this.message,
+      httpCode: this.httpCode,
+      errorCode: this.errorCode,
+      details: this.details,
+      stack: this.stack,
+    };
+  }
 }
 
 export class InternalServerError extends AppError {
@@ -68,5 +79,11 @@ export class InternalServerError extends AppError {
       defaultReason,
       { stack: stack },
     );
+  }
+}
+
+export class InvalidData extends AppError {
+  constructor(message: string, reason: string = "you passed invalid data") {
+    super(400, message, "INVALID_DATA", reason);
   }
 }
