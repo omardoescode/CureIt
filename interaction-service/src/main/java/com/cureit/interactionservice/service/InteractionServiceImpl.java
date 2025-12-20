@@ -63,9 +63,7 @@ public class InteractionServiceImpl implements InteractionService {
 
 		InteractionEvent event = InteractionEvent.builder().type(InteractionType.MODIFY_TYPE.getValue())
 				.timestamp(Instant.now()).contentId(request.getContentId()).contentType(request.getContentType())
-				.userWeight(request.getUserWeight()).rawData(Map.of("content_id", request.getContentId(),
-						"content_type", request.getContentType(), "user_weight", request.getUserWeight()))
-				.build();
+				.userWeight(request.getUserWeight()).build();
 
 		saveAndPublish(coordinationId, event);
 		return ResponseEntity.accepted().build();
