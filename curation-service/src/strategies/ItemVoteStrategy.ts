@@ -8,9 +8,9 @@ export default class ItemVoteStrategy extends CurationStrategy {
     assert(event.type === "vote", 'Invalid event type for ItemVoteStrategy');
 
     return {
-      content_id: event.content_id,
+      contentId: event.contentId,
       reason: "Content item received a vote.",
-      incr: event.user_weight,
+      incr: event.userWeight,
       type: 'item_vote_update',
     }
   }

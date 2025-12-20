@@ -37,13 +37,13 @@ export default class CurationService {
     if (payload) {
       const { reason, ...rest } = payload;
       logger.info(
-        `Emitting curation update for content_id=${rest.content_id}. reason=${reason}`,
+        `Emitting curation update for content_id=${rest.contentId}. reason=${reason}`,
       );
       await this.emitEvent(rest);
     }
   }
   private async emitEvent(evt: Omit<CurationUpdate, "reason">) {
-    const { content_id, ...rest } = evt;
+    const { contentId: content_id, ...rest } = evt;
     await this.producer.send({
       topic: env.KAFKA_CURATION_UPDATE_TOPIC_NAME,
       messages: [

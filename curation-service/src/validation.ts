@@ -19,23 +19,23 @@ export const InteractionEventSchema = z.discriminatedUnion("type", [
       .nonempty()
       .regex(/^(\d+|[a-zA-Z]+|:)$/)
       .transform((x) => x.toLowerCase()),
-    user_weight: NonZeroNumber,
-    content_id: z.string().nonempty(),
+    userWeight: NonZeroNumber,
+    contentId: z.string().nonempty(),
   }),
   BaseInteractionEvent.extend({
     type: z.literal(InteractionTypeSchema.enum.vote),
-    user_weight: NonZeroNumber,
-    content_id: z.string().nonempty(),
+    userWeight: NonZeroNumber,
+    contentId: z.string().nonempty(),
   }),
   BaseInteractionEvent.extend({
     type: z.literal(InteractionTypeSchema.enum.modify_type),
-    user_weight: NonZeroNumber,
-    content_type: z
+    userWeight: NonZeroNumber,
+    contentType: z
       .string()
       .nonempty()
       .regex(/^(\d+|[a-zA-Z]+|:)$/)
       .transform((x) => x.toLowerCase()),
-    content_id: z.string().nonempty(),
+    contentId: z.string().nonempty(),
   }),
 ]);
 
@@ -43,7 +43,7 @@ export type InteractionEvent = z.infer<typeof InteractionEventSchema>;
 
 const BaseCurationUpdateSchema = z.object({
   coordinationId: z.string().nonempty(),
-  content_id: z.string().nonempty(),
+  contentId: z.string().nonempty(),
   reason: z.string().nonempty(),
 });
 
@@ -55,7 +55,7 @@ export const CurationUpdateSchmea = z.discriminatedUnion("type", [
   }),
   BaseCurationUpdateSchema.extend({
     type: z.literal("content_type_update"),
-    new_type: z.string().nonempty(),
+    newType: z.string().nonempty(),
   }),
   BaseCurationUpdateSchema.extend({
     type: z.literal("item_vote_update"),

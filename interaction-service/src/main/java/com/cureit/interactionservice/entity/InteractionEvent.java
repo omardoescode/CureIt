@@ -17,17 +17,17 @@ import java.util.Map;
 @NoArgsConstructor
 public class InteractionEvent {
 
-    @Id
-    private String id;
+	@Id
+	private String id;
 
-    private String type;
-    private Instant timestamp;
+	private String type;
+	private Instant timestamp;
 
-    private String userId;
-    private String contentId;
-    private String topic;
-    private String contentType;
-    private Integer userWeight;
+	private String userId;
+	private String contentId;
+	private String topic;
+	private String contentType;
+	private Integer userWeight;
 
-    private Map<String, Object> rawData;
+	private Map<String, Object> rawData;
 }
