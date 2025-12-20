@@ -75,6 +75,7 @@ consumer
   })
   .then(() => logger.info("Consumer run method has been thened lol"));
 
+
 const app = new Hono().basePath("/api");
 app.use(logMiddleware());
 app.route("/content", ContentRouter);
