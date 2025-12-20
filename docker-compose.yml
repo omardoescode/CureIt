@@ -221,34 +221,21 @@ services:
     networks:
       - backend-net
 
-  # interaction-service:
-  #   build: ./interaction-service
-  #   container_name: interaction-service
-  #   environment:
-  #     - PORT=${INTERACTION_SERVICE_PORT}
-  #     - MONGO_URL=mongodb://${INTERACTION_MONGO_DB_USERNAME}:${INTERACTION_MONGO_DB_PASSWORD}@interaction-db:27017/interaction-data?authSource=admin
-  #     - KAFKA_BROKERS=kafka:9092
-  #     - KAFKA_INTERACTION_EVENTS_TOPIC_NAME=interaction.events
-  #   ports:
-  #     - "${INTERACTION_SERVICE_PORT}:${INTERACTION_SERVICE_PORT}"
-  #   depends_on:
-  #     - interaction-db
-  #     - kafka
-  #   networks:
-  #     - backend-net
-  #
-  # interaction-db:
-  #   image: mongo:8
-  #   container_name: interaction-db
-  #   volumes:
-  #     - ./persistence.local/interaction-db:/data/db
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: ${INTERACTION_DB_USERNAME}
-  #     MONGO_INITDB_ROOT_PASSWORD: ${INTERACTION_DB_PASSWORD}
-  #   ports:
-  #     - "${INTERACTION_DB_PORT}:27017"
-  #   networks:
-  #     - backend-net
+  interaction-service:
+    build: ./interaction-service
+    container_name: interaction-service
+    environment:
+      - PORT=${INTERACTION_SERVICE_PORT}
+      - INTERACTION_MONGO_DB_URL=mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@mongo-db:27017/interaction-data?authSource=admin
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_INTERACTION_EVENTS_TOPIC_NAME=interaction.events
+    ports:
+      - "${INTERACTION_SERVICE_PORT}:${INTERACTION_SERVICE_PORT}"
+    depends_on:
+      - mongo-db
+      - kafka
+    networks:
+      - backend-net
 
 volumes:
   persistence.local:
