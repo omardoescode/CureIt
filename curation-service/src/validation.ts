@@ -61,6 +61,10 @@ export const CurationUpdateSchmea = z.discriminatedUnion("type", [
     type: z.literal("item_vote_update"),
     incr: NonZeroNumber,
   }),
+  BaseCurationUpdateSchema.extend({
+    type: z.literal("item_downvote_update"),
+    incr: NonZeroNumber,
+  }),
 ]);
 
 export type CurationUpdate = z.infer<typeof CurationUpdateSchmea>;

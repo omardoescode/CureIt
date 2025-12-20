@@ -1,8 +1,5 @@
 package com.cureit.interactionservice.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -23,8 +20,11 @@ public class ModifyTopicRequest {
 	private Integer userWeight = 1;
 	@NotBlank
 	private String contentId;
+	@NotNull
+	private boolean remove;
 
 	public Integer getUserWeight() {
-		return userWeight == null ? 1 : userWeight;
+		int weight = userWeight == null ? 1 : userWeight;
+		return (remove ? -1 : 1) * weight;
 	}
 }

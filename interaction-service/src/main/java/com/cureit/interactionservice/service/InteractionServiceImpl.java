@@ -38,11 +38,8 @@ public class InteractionServiceImpl implements InteractionService {
 
 		loggerHelper(coordinationId);
 
-		int weight = (request.getUserWeight() != null) ? request.getUserWeight() : 1;
-
-		InteractionEvent event = InteractionEvent.builder().type(InteractionType.VOTE.getValue()).userWeight(-1)
-				.timestamp(Instant.now()).contentId(request.getContentId()).userWeight(weight)
-				.rawData(Map.of("content_id", request.getContentId(), "user_weight", weight)).build();
+		InteractionEvent event = InteractionEvent.builder().type(InteractionType.VOTE.getValue())
+				.userWeight(request.getUserWeight()).timestamp(Instant.now()).contentId(request.getContentId()).build();
 
 		saveAndPublish(coordinationId, event);
 		return ResponseEntity.accepted().build();
@@ -52,11 +49,9 @@ public class InteractionServiceImpl implements InteractionService {
 	public ResponseEntity<Void> downvote(String coordinationId, VoteRequest request) {
 		loggerHelper(coordinationId);
 
-		int weight = (request.getUserWeight() != null) ? request.getUserWeight() : -1;
-
-		InteractionEvent event = InteractionEvent.builder().type(InteractionType.VOTE.getValue()).userWeight(-1)
-				.timestamp(Instant.now()).contentId(request.getContentId()).userWeight(weight)
-				.rawData(Map.of("content_id", request.getContentId(), "user_weight", weight)).build();
+		InteractionEvent event = InteractionEvent.builder().type(InteractionType.VOTE.getValue())
+				.userWeight(-1 * request.getUserWeight()).timestamp(Instant.now()).contentId(request.getContentId())
+				.build();
 
 		saveAndPublish(coordinationId, event);
 		return ResponseEntity.accepted().build();

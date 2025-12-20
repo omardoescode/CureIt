@@ -43,6 +43,13 @@ export default class AggregateTopicStrategy extends CurationStrategy {
     const new_relative =
       new_total_weight > 0 ? new_topic_weight / new_total_weight : 0;
 
+    for (const [t, w] of Object.entries(weights)) {
+      if (w <= 0) {
+        delete weights[t];
+        await this.redis.hdel(hash_key, t); // remove from Redis
+      }
+    }
+
     const update_payload: Record<string, string> = {};
 
     for (const [t, w] of Object.entries(weights)) {
