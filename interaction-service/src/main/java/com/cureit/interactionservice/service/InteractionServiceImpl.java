@@ -73,9 +73,8 @@ public class InteractionServiceImpl implements InteractionService {
 	public ResponseEntity<Void> followTopic(String coordinationId, String userId, FollowAndUnfollowRequest request) {
 		loggerHelper(coordinationId, userId);
 
-		InteractionEvent event = InteractionEvent.builder().type(InteractionType.FOLLOW_TOPIC.getValue())
-				.timestamp(Instant.now()).topic(request.getTopic())
-				.rawData(Map.of("topic", request.getTopic(), "user_id", userId)).build();
+		InteractionEvent event = InteractionEvent.builder().userId(userId).type(InteractionType.FOLLOW_TOPIC.getValue())
+				.timestamp(Instant.now()).topic(request.getTopic()).build();
 
 		saveAndPublish(coordinationId, event);
 		return ResponseEntity.accepted().build();
@@ -85,9 +84,9 @@ public class InteractionServiceImpl implements InteractionService {
 	public ResponseEntity<Void> unfollowTopic(String coordinationId, String userId, FollowAndUnfollowRequest request) {
 		loggerHelper(coordinationId, userId);
 
-		InteractionEvent event = InteractionEvent.builder().type(InteractionType.UNFOLLOW_TOPIC.getValue())
-				.timestamp(Instant.now()).topic(request.getTopic())
-				.rawData(Map.of("topic", request.getTopic(), "user_id", userId)).build();
+		InteractionEvent event = InteractionEvent.builder().userId(userId)
+				.type(InteractionType.UNFOLLOW_TOPIC.getValue()).timestamp(Instant.now()).topic(request.getTopic())
+				.build();
 
 		saveAndPublish(coordinationId, event);
 		return ResponseEntity.accepted().build();
