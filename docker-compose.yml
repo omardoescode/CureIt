@@ -13,6 +13,7 @@ services:
       - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
       - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT}
       - FEED_SERVICE_URL=http://feed-service:${FEED_SERVICE_PORT}
+      - INTERACTION_SERVICE_URL=http://interaction-service:${INTERACTION_SERVICE_PORT}
       - PORT=${API_GATEWAY_PORT}
     depends_on:
       - content-processing
