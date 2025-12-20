@@ -23,8 +23,8 @@ export default class CurationService {
     this.strategies = new Map();
     this.strategies.set("modify_topic", new ModifyTopicStrategy(redis));
     this.strategies.set("modify_type", new TopTypeStrategy(redis));
-    this.strategies.set("upvote", new ItemVoteStrategy(redis));
-    this.strategies.set("downvote", new ItemVoteStrategy(redis));
+    this.strategies.set("upvote", new ItemVoteStrategy(redis, "upvote"));
+    this.strategies.set("downvote", new ItemVoteStrategy(redis, "downvote"));
   }
 
   public async handle_event(event: InteractionEvent) {

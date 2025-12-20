@@ -1,7 +1,5 @@
 import z from "zod";
 
-const NonZeroNumber = z.union([z.int().positive(), z.int().negative()]);
-
 const BaseCurationUpdateSchema = z.object({
   contentId: z.string().nonempty(),
   coordinationId: z.string().nonempty(),
@@ -19,11 +17,11 @@ export const CurationUpdateEventSchmea = z.discriminatedUnion("type", [
   }),
   BaseCurationUpdateSchema.extend({
     type: z.literal("item_upvote_update"),
-    incr: NonZeroNumber,
+    value: z.number().int().positive(),
   }),
   BaseCurationUpdateSchema.extend({
     type: z.literal("item_downvote_update"),
-    decr: NonZeroNumber,
+    value: z.number().int().positive(),
   }),
 ]);
 

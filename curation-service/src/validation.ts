@@ -2,7 +2,12 @@ import z from "zod";
 
 const NonZeroNumber = z.union([z.int().positive(), z.int().negative()]);
 
-const InteractionTypeSchema = z.enum(["modify_type", "modify_topic", "vote"]);
+const InteractionTypeSchema = z.enum([
+  "modify_type",
+  "modify_topic",
+  "upvote",
+  "downvote",
+]);
 
 export type InteractionType = z.infer<typeof InteractionTypeSchema>;
 
@@ -23,8 +28,13 @@ export const InteractionEventSchema = z.discriminatedUnion("type", [
     contentId: z.string().nonempty(),
   }),
   BaseInteractionEvent.extend({
-    type: z.literal(InteractionTypeSchema.enum.vote),
-    userWeight: NonZeroNumber,
+    type: z.literal(InteractionTypeSchema.enum.upvote),
+    userWeight: z.int().positive(),
+    contentId: z.string().nonempty(),
+  }),
+  BaseInteractionEvent.extend({
+    type: z.literal(InteractionTypeSchema.enum.downvote),
+    userWeight: z.int().positive(),
     contentId: z.string().nonempty(),
   }),
   BaseInteractionEvent.extend({
@@ -58,12 +68,12 @@ export const CurationUpdateSchmea = z.discriminatedUnion("type", [
     newType: z.string().nonempty(),
   }),
   BaseCurationUpdateSchema.extend({
-    type: z.literal("item_vote_update"),
-    incr: NonZeroNumber,
+    type: z.literal("item_upvote_update"),
+    value: z.int().positive(),
   }),
   BaseCurationUpdateSchema.extend({
     type: z.literal("item_downvote_update"),
-    incr: NonZeroNumber,
+    value: z.int().positive(),
   }),
 ]);
 

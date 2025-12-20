@@ -23,7 +23,7 @@ export const CurationUpdateHandler = {
         {
           const updatedItem = await BaseContentItem.findByIdAndUpdate(
             message.contentId,
-            { $inc: { upvotes: message.incr } },
+            { $inc: { upvotes: message.value } },
             { returnDocument: "after" },
           ).lean();
 
@@ -42,7 +42,7 @@ export const CurationUpdateHandler = {
         {
           const updatedItem = await BaseContentItem.findByIdAndUpdate(
             message.contentId,
-            { $inc: { downvotes: message.decr } },
+            { $inc: { downvotes: message.value } },
             { returnDocument: "after" },
           ).lean();
 

@@ -38,8 +38,9 @@ public class InteractionServiceImpl implements InteractionService {
 
 		loggerHelper(coordinationId);
 
-		InteractionEvent event = InteractionEvent.builder().type(InteractionType.VOTE.getValue())
+		InteractionEvent event = InteractionEvent.builder().type(InteractionType.UPVOTE.getValue())
 				.userWeight(request.getUserWeight()).timestamp(Instant.now()).contentId(request.getContentId()).build();
+		log.info("{}", event);
 
 		saveAndPublish(coordinationId, event);
 		return ResponseEntity.accepted().build();
@@ -49,9 +50,8 @@ public class InteractionServiceImpl implements InteractionService {
 	public ResponseEntity<Void> downvote(String coordinationId, VoteRequest request) {
 		loggerHelper(coordinationId);
 
-		InteractionEvent event = InteractionEvent.builder().type(InteractionType.VOTE.getValue())
-				.userWeight(-1 * request.getUserWeight()).timestamp(Instant.now()).contentId(request.getContentId())
-				.build();
+		InteractionEvent event = InteractionEvent.builder().type(InteractionType.DOWNVOTE.getValue())
+				.userWeight(request.getUserWeight()).timestamp(Instant.now()).contentId(request.getContentId()).build();
 
 		saveAndPublish(coordinationId, event);
 		return ResponseEntity.accepted().build();
