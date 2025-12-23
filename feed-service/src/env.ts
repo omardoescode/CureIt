@@ -17,7 +17,7 @@ const envSchema = z.object({
   KAFKA_GROUP_ID: z.string().nonempty(),
   KAFKA_INTERACTION_EVENTS_TOPIC_NAME: z.string().nonempty(),
   KAFKA_CONTENT_UPDATE_TOPIC_NAME: z.string().nonempty(),
-  KAFKA_STORAGE_CONTENT_TOPIC_NAME: z.string().nonempty(),
+  KAFKA_CONTENT_CREATION_TOPIC_NAME: z.string().nonempty(),
   MONGO_URL: z.url(),
   CONTENT_STORAGE_SERVICE_URL: z.url(),
 });
