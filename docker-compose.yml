@@ -92,7 +92,9 @@ services:
       - KAFKA_CLIENT_ID=content-creation-client
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CONTENT_CREATION_TOPIC_NAME=storage.content-added
+      - KAFKA_CONTENT_UPDATE_TOPIC_NAME=storage.content-updated
       - KAFKA_CURATION_UPDATE_TOPIC_NAME=curation.events
+      - KAFKA_GROUP_ID=content-creation-group
     depends_on:
       - mongo-db
       - content-processing
