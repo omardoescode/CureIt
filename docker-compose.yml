@@ -9,7 +9,6 @@ services:
     environment:
       - NODE_ENV
       - LOG_LEVEL
-      - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
       - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
       - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT}
       - FEED_SERVICE_URL=http://feed-service:${FEED_SERVICE_PORT}
@@ -17,6 +16,9 @@ services:
       - PORT=${API_GATEWAY_PORT}
     depends_on:
       - content-processing
+      - user-service
+      - feed-service
+      - interaction-service
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
     networks:
@@ -90,9 +92,12 @@ services:
       - MONGO_URL=mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@mongo-db:27017/content-data?authSource=admin
       - CONTENT_PROCESSING_SERVICE_URL=http://content-processing:${CONTENT_PROCESSING_PORT}
       - KAFKA_CLIENT_ID=content-creation-client
+      - KAFKA_GROUP_ID=curation-processor-group
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CONTENT_CREATION_TOPIC_NAME=storage.content-added
+      - KAFKA_CONTENT_UPDATE_TOPIC_NAME=storage.content-updated
       - KAFKA_CURATION_UPDATE_TOPIC_NAME=curation.events
+      - KAFKA_GROUP_ID=content-creation-group
     depends_on:
       - mongo-db
       - content-processing
@@ -116,6 +121,7 @@ services:
       - CONTENT_STORAGE_SERVICE_URL=http://content-storage:${CONTENT_STORAGE_PORT}
       - KAFKA_CLIENT_ID=feed-service-client
       - KAFKA_GROUP_ID=feed-service-client
+      - KAFKA_STORAGE_CONTENT_TOPIC_NAME=storage.content-added
       - KAFKA_BROKERS=kafka:9092
       - KAFKA_CONTENT_CREATION_TOPIC_NAME=storage.content-added
       - KAFKA_INTERACTION_EVENTS_TOPIC_NAME=interaction.events
@@ -187,7 +193,7 @@ services:
       - "9092:9092"
       - "29092:29092"
     environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_HOST://localhost:29092,PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
