@@ -1,5 +1,7 @@
 # CureIt
 
+> This is a an **old** implementation, and the current **working** one. A new more modular version is being built on the `main` branch
+
 # Running the Project
 
 Use Java version 21
